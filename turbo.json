@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "globalDependencies": [".nvmrc"],
+  "tasks": {
+    "//#prettier:check": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "apps/**",
+        "!**/node_modules/**",
+        "!**/.turbo/**",
+        "!apps/*/.next/**",
+        "!apps/*/out/**"
+      ],
+      "outputs": []
+    },
+    "typecheck": {
+      "outputs": []
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["out/**"]
+    }
+  }
+}

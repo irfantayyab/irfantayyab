@@ -1,0 +1,21 @@
+{
+  "name": "portfolio",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "turbo run //#prettier:check",
+    "prettier:check": "prettier --check .",
+    "verify": "turbo run //#prettier:check typecheck build"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "turbo": "^2.11.10"
+  }
+}
