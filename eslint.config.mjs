@@ -25,7 +25,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["**/*.{js,mjs,ts,tsx,mts}"],
+    files: ["**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
     ignores: ["**/*.spec.{ts,tsx}", "**/src/testing/**"],
     rules: {
       "no-restricted-imports": [

@@ -31,4 +31,6 @@ jobs:
         env:
           TITLE: ${{ github.event.pull_request.title }}
           NUMBER: ${{ github.event.pull_request.number }}
-        run: printf '%s (#%s)\n' "$TITLE" "$NUMBER" | pnpm exec commitlint --verbose
+        run: |
+          printf '%s\n' "$TITLE" | pnpm exec commitlint --verbose
+          printf '%s (#%s)\n' "$TITLE" "$NUMBER" | pnpm exec commitlint --verbose
