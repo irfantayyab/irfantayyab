@@ -13,7 +13,24 @@
       ],
       "outputs": []
     },
+    "//#eslint:root": {
+      "inputs": ["*.mjs", "scripts/**", "package.json", "pnpm-lock.yaml"],
+      "outputs": []
+    },
+    "lint": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/eslint.config.mjs"],
+      "outputs": []
+    },
     "typecheck": {
+      "outputs": []
+    },
+    "test": {
+      "outputs": []
+    },
+    "test:integration": {
+      "outputs": []
+    },
+    "test:all": {
       "outputs": []
     },
     "build": {

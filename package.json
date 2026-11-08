@@ -8,14 +8,28 @@
   "scripts": {
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
+    "lint": "turbo run //#eslint:root lint",
+    "eslint:root": "eslint --max-warnings=0 *.mjs scripts",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "test:all": "turbo run test:all",
     "format": "prettier --write .",
     "format:check": "turbo run //#prettier:check",
     "prettier:check": "prettier --check .",
-    "verify": "turbo run //#prettier:check typecheck build"
+    "verify": "turbo run //#prettier:check //#eslint:root lint typecheck test:all build",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.5",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "turbo": "^2.11.10"
+    "turbo": "^2.11.10",
+    "typescript": "~6.0.3"
   }
 }
