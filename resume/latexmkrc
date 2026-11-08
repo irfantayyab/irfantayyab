@@ -1,0 +1,47 @@
+# =====================================================================
+#  latexmkrc — build settings for Irfan_Tayyab_SWE.tex
+# ---------------------------------------------------------------------
+#  Read by latexmk on every build, from VS Code or the terminal.
+#  Command-line options (e.g. the VS Code recipe) override these.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+#  ENGINE: always XeLaTeX (needed for the system fonts)
+# ---------------------------------------------------------------------
+
+$pdf_mode = 5;                     # 5 = build the PDF with xelatex
+$pdflatex = 'xelatex %O %S';       # safety net if "-pdf" is passed
+
+
+# ---------------------------------------------------------------------
+#  AUX FILES: keep them in .build/, keep the PDF next to the .tex
+# ---------------------------------------------------------------------
+
+$aux_dir     = '.build';
+$emulate_aux = 1;                  # latexmk manages .build itself
+
+
+# ---------------------------------------------------------------------
+#  HIDDEN FILES (Windows only)
+# ---------------------------------------------------------------------
+
+my $is_windows = ($^O eq 'MSWin32');
+my $attrib = ($ENV{SystemRoot} || 'C:/Windows') . '/System32/attrib.exe';
+
+# Before the build: create .build, hide it, and un-hide last build's
+# SyncTeX file so latexmk is allowed to replace it.
+mkdir '.build' unless -d '.build';
+
+if ($is_windows) {
+    system($attrib, '+h', '.build');
+    system($attrib, '-h', $_) for glob('*.synctex.gz');
+}
+
+# After the build: hide the new SyncTeX file.
+# (END runs when latexmk exits, whether the build passed or failed.)
+END {
+    if ($is_windows) {
+        system($attrib, '+h', $_) for glob('*.synctex.gz');
+    }
+}

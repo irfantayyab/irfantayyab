@@ -1,0 +1,28 @@
+{
+ "latex-workshop.latex.autoBuild.run": "onSave",
+ "latex-workshop.latex.tools": [
+  {
+   "name": "latexmk-xelatex",
+   "command": "latexmk",
+   "args": [
+    "-xelatex",
+    "-synctex=1",
+    "-interaction=nonstopmode",
+    "-file-line-error",
+    "-auxdir=.build",
+    "-emulate-aux-dir",
+    "%DOC%"
+   ]
+  }
+ ],
+ "latex-workshop.latex.recipes": [
+  {
+   "name": "latexmk (xelatex → .build/)",
+   "tools": ["latexmk-xelatex"]
+  }
+ ],
+ "files.exclude": {
+  "**/.build": true,
+  "**/*.synctex.gz": true
+ }
+}

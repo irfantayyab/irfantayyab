@@ -1,0 +1,354 @@
+% =====================================================================
+%  Irfan Tayyab — Resume
+% ---------------------------------------------------------------------
+%  Engine : XeLaTeX (or LuaLaTeX). Will NOT compile with pdfLaTeX.
+%  Build  : latexmk (uses ./latexmkrc)  or  xelatex Irfan_Tayyab_SWE.tex
+%
+%  Where to change things:
+%    Margins ............ PAGE LAYOUT
+%    Fonts .............. FONTS
+%    Colours ............ COLOURS
+%    Text sizes ......... TEXT SIZES
+%    All spacing ........ SPACING  (one place for every gap on the page)
+%    Your content ....... DOCUMENT (bottom half of the file)
+% =====================================================================
+
+\documentclass[letterpaper]{article}
+
+
+% =====================================================================
+%  PAGE LAYOUT
+% =====================================================================
+
+% Margins. Units: in, cm, mm, pt (1in = 2.54cm = 72.27pt).
+% Without these options LaTeX would use much wider margins (~1.3in).
+\usepackage[
+  letterpaper,          % 8.5in x 11in (use a4paper for A4)
+  top    = 0.4in,
+  bottom = 0.4in,
+  left   = 0.4in,
+  right  = 0.4in,
+]{geometry}
+
+% Body text size, set with scrextend (it also rescales \small, \large, etc.).
+\usepackage[fontsize=10pt]{scrextend}
+
+% Line spacing: scrextend gives 12pt lines at 10pt (1.0 = unchanged).
+\linespread{1}
+\frenchspacing
+
+
+% =====================================================================
+%  PACKAGES
+% =====================================================================
+
+\usepackage{fontspec}             % system fonts (Garamond, Cambria Math)
+\usepackage{xcolor}               % heading and link colours
+\usepackage{enumitem}             % bullet list settings
+\usepackage{titlesec}             % section heading style
+\usepackage[normalem]{ulem}       % \uline for underlined links
+\usepackage[
+  hidelinks,
+  bookmarks=false,                % one page, no outline needed:
+  pdfpagelabels=false,            %   avoids the .out file and rerun warnings
+  pdftitle={Irfan Tayyab — Resume},
+  pdfauthor={Irfan Tayyab},
+]{hyperref}
+
+
+% =====================================================================
+%  FONTS
+% =====================================================================
+
+% Fonts are loaded directly (no existence checks) for faster builds.
+% Aptos (with its Light, SemiBold and Bold weights) ships with recent MS Office
+% and is a free download from Microsoft; Cambria Math ships with Windows.
+% Weights:
+%   body text, title ............................ Aptos Light
+%   \textbf (bold words, skill labels, degree) ... Aptos SemiBold
+%   name, section headings, job titles .......... Aptos SemiBold (\semiboldfont)
+% If a printed copy looks too pale, change Aptos Light to Aptos below.
+% Previous fonts: Garamond, Aptos Regular/Bold, Source Sans 3.
+\setmainfont{Aptos Light}[
+  BoldFont = Aptos SemiBold,
+]
+\newfontfamily\semiboldfont{Aptos SemiBold}
+\newfontfamily\arrowfont{Cambria Math}             % "↗" arrow
+
+% GitHub icon straight from the Font Awesome font file. Much faster than
+% loading the fontawesome5 package, which defines ~1,600 icons.
+\newfontfamily\fabrands{FontAwesome5Brands-Regular-400.otf}
+\newcommand{\githubicon}{{\fabrands\symbol{"F09B}}}
+\newcommand{\linkedinicon}{{\fabrands\symbol{"F08C}}}
+
+
+% =====================================================================
+%  COLOURS
+% =====================================================================
+
+\definecolor{headgray}{HTML}{404040}   % name, title, job marker bars
+\definecolor{linkblue}{HTML}{0563C1}   % contact links
+
+
+% =====================================================================
+%  TEXT SIZES
+% =====================================================================
+
+% \fontsize{<size>}{<line spacing>}
+% \linespread{1} makes these use exactly the line spacing given here.
+\newcommand{\namefont}{\fontsize{20pt}{24pt}\linespread{1}\selectfont\semiboldfont\color{headgray}}  % SemiBold
+\newcommand{\headlinefont}{\fontsize{13pt}{16pt}\linespread{1}\selectfont\mdseries\color{headgray}} % Light (body weight)
+\newcommand{\sectionfont}{\fontsize{11pt}{12.4pt}\linespread{1}\selectfont\semiboldfont\color{black}}
+\newcommand{\linkfont}{\fontsize{11pt}{16.6pt}\linespread{1}\selectfont} % 16.6pt = row spacing
+
+
+% =====================================================================
+%  SPACING  — every gap on the page is set here
+% =====================================================================
+
+\setlength{\parindent}{0pt}        % no paragraph indents
+\setlength{\parskip}{0pt}          % no extra space between paragraphs
+\setlength{\topskip}{0pt}          % name starts right at the top margin
+\pagestyle{empty}                 % no page number
+
+% Header
+\newlength{\headerlinegap}  \setlength{\headerlinegap}{2pt}  % extra space between header lines (both columns)
+\newlength{\edugap}         \setlength{\edugap}{1pt}         % additional space above the education line
+\newlength{\contactgap}     \setlength{\contactgap}{1pt}     % additional space between the two contact lines
+\newlength{\headerafter}    \setlength{\headerafter}{13pt} % header -> first section
+
+% Sections
+\newlength{\sectionbefore}  \setlength{\sectionbefore}{11.8pt} % above a section heading
+\newlength{\rulegap}        \setlength{\rulegap}{1pt}         % heading text -> rule
+\newlength{\ruleheight}     \setlength{\ruleheight}{0.75pt}   % rule thickness
+\newlength{\sectionafter}   \setlength{\sectionafter}{6.9pt}  % rule -> section content
+
+% Jobs and bullets
+\newlength{\jobgap}         \setlength{\jobgap}{10pt}        % last bullet -> next job
+\newlength{\entryindent}    \setlength{\entryindent}{10pt}   % job marker -> job title (bullets follow)
+\newlength{\markerwidth}    \setlength{\markerwidth}{3pt}    % thickness of the job marker bar
+\newlength{\bulletgap}      \setlength{\bulletgap}{7.4pt}    % job title -> first bullet
+\newlength{\itemgap}        \setlength{\itemgap}{1.4pt}      % between bullets
+\newlength{\bulletindent}   \setlength{\bulletindent}{10pt}  % dash -> bullet text
+\newlength{\bulletright}    \setlength{\bulletright}{0.45in} % empty space right of bullet text; keeps bullet lines a little shorter
+
+% Skills and links
+\newlength{\skillgap}       \setlength{\skillgap}{3pt}       % between skill groups
+\newlength{\skilllabelwidth} % set at \begin{document} to the widest skill label
+\newlength{\linkcol}        \setlength{\linkcol}{2.2in}      % width of each project link column
+
+% Left-aligned text (ragged right) and no hyphenation
+\AtBeginDocument{\raggedright}
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+
+
+% =====================================================================
+%  STYLES
+% =====================================================================
+
+% --- Section headings: \section*{Title} --------------------------------
+%  Bold grey title with a full-width rule underneath. The zero-width strut
+%  gives every heading the same depth, so the rule sits at the same distance
+%  whether or not the title has descenders (g, p, y).
+\titleformat{\section}
+  {\sectionfont}                                          % format
+  {}{0pt}                                                 % no numbers
+  {\headingtitle}                                         % title
+  [\vspace{\rulegap}{\color{black}\titlerule[\ruleheight]}] % rule below
+\newcommand{\headingtitle}[1]{#1\rule[-3pt]{0pt}{3pt}}
+\titlespacing*{\section}{0pt}{\sectionbefore}{\sectionafter}
+
+% --- Bullet lists: plain \begin{itemize} ... \end{itemize} ------------
+\setlist[itemize]{
+  label      = \textendash,                              % small dash
+  leftmargin = \dimexpr\entryindent+\bulletindent\relax,   % lines up under the job title
+  rightmargin= \bulletright,                             % shorter lines, easier to read
+  labelwidth = \bulletindent,
+  labelsep   = 0pt,
+  align      = left,
+  topsep     = 0pt,
+  itemsep    = \itemgap,                     % space between bullets
+  parsep     = 0pt,
+  partopsep  = 0pt,
+  before     = \vspace{\bulletgap},         % job title -> first bullet
+  after      = \endgraf\addvspace{\jobgap}, % last bullet -> next job
+}
+
+% --- Links ---------------------------------------------------------------
+\renewcommand{\ULthickness}{0.5pt}          % underline thickness
+\setlength{\ULdepth}{1.6pt}                 % underline distance below text
+\newcommand{\bluelink}[2]{\href{#1}{\textcolor{linkblue}{#2}}} % blue, no underline
+\newcommand{\extarrow}{{\arrowfont ↗}}
+
+
+% =====================================================================
+%  COMMANDS USED IN THE CONTENT
+% =====================================================================
+
+% \job{Role}{Company}{Dates}
+%  One line: a grey marker bar, then "Role, Company" on the left and the
+%  dates flush right. The title starts \entryindent in; bullets line up with it.
+\newcommand{\jobmarker}{{\color{headgray}%
+  \rule[-1pt]{\markerwidth}{\dimexpr\fontcharht\font`H+2pt\relax}}}
+\newcommand{\job}[3]{%
+  \makebox[\entryindent][l]{\jobmarker}%
+  {\semiboldfont\color{black}#1}, #2\hfill #3\par
+}
+
+% skills list: a label column (bold) with the items wrapping beside it.
+%  The label column is as wide as the widest label; spacing between groups
+%  comes from \skillgap, wrapped lines use normal line spacing.
+\newlist{skills}{itemize}{1}
+\setlist[skills]{
+  font       = \bfseries,
+  align      = left,
+  labelwidth = \skilllabelwidth,
+  labelsep   = 1em,
+  leftmargin = \dimexpr\skilllabelwidth+1em\relax,
+  topsep     = 0pt,
+  partopsep  = 0pt,
+  parsep     = 0pt,
+  itemsep    = \skillgap,
+}
+\AtBeginDocument{\settowidth{\skilllabelwidth}{\bfseries DevOps \& Testing}}
+% \skill{Label}{items} — one group in the skills list.
+\newcommand{\skill}[2]{\item[#1] #2}
+
+% \project{URL}{Name} — one underlined project link with an arrow.
+\newcommand{\project}[2]{\textbullet\ \href{#1}{\uline{#2\ \extarrow}}}
+
+
+% =====================================================================
+%  DOCUMENT
+% =====================================================================
+
+\begin{document}
+
+% ---------------------------------------------------------------------
+%  HEADER
+% ---------------------------------------------------------------------
+
+% Two columns: name and title on the left; contact details right-aligned on
+% the right (two lines). [b] aligns both columns on their last line.
+\begin{minipage}[b]{0.28\linewidth}
+  \raggedright
+  {\namefont Irfan Tayyab\par}
+  \vspace{\headerlinegap}
+  {\headlinefont Full-Stack AI Engineer\par}
+\end{minipage}%
+\hfill
+\begin{minipage}[b]{0.72\linewidth}
+  \raggedleft
+  +92 315 047 2137\quad
+  irfantayyib07@gmail.com\quad
+  Lahore, Pakistan\par
+  \vspace{\dimexpr\headerlinegap+\contactgap\relax}
+  \bluelink{https://www.linkedin.com/in/irfan-tayyab-31b52330b/}{linkedin.com/in/irfan-tayyab-31b52330b}\quad
+  \bluelink{https://github.com/irfantayyab}{github.com/irfantayyab}\quad
+  \bluelink{https://irfantayyab.vercel.app/}{irfantayyab.vercel.app}\par
+\end{minipage}\par
+
+\addvspace{\headerafter}
+
+
+% ---------------------------------------------------------------------
+%  EDUCATION
+% ---------------------------------------------------------------------
+
+\section*{Education}
+
+\job{BS in Computer Science}{Virtual University of Pakistan}{}
+\vspace{2pt}
+{\leftskip=\entryindent Final Year Project: an AI platform (FastAPI, LangChain, n8n)
+that routes students' queries from the web, email and WhatsApp.\par
+It uses Gemini with a Groq fallback, structured output and PII redaction, routing uncertain
+queries to a person.\par}
+\addvspace{\jobgap}
+
+
+% ---------------------------------------------------------------------
+%  WORK EXPERIENCE
+% ---------------------------------------------------------------------
+
+\section*{Work Experience}
+
+\job{Software Engineer}{AmentoTech Pvt Ltd}{Nov 2025 – Oct 2026}
+\begin{itemize}
+  \item Architected a \textbf{configuration-driven form system} powering 8+ multi-step variations,
+        with schema branching and per-step validation, making new flows quick to add and
+        easy for the team to build on together.
+  \item Set up a \textbf{Turborepo monorepo} with shared linting, formatting and pre-commit
+        checks (lint-staged), giving the team and its AI tools one consistent codebase.
+  \item Created shared, reusable components and complex layouts with React Portals,
+        turning Figma designs into pixel-perfect UIs with AI-assisted tooling and
+        \textbf{minimal designer-developer revision cycles}.
+  \item Engineered a \textbf{personalized widget dashboard} on a drag-and-drop grid (dnd-kit),
+        letting users rearrange, resize and reshape widgets while the layout holds on every
+        screen size.
+  \item Adopted \textbf{AI-driven development} with Claude and Cursor, using prompt engineering
+        to streamline the work, alongside AI-powered pull request reviews and the team's
+        custom skills plugin.
+\end{itemize}
+
+\job{Open Source Contributor}{Plumb MCP}{Aug 2026}
+\begin{itemize}
+  \item Fixed a Figma \textbf{UI freeze} in Plumb MCP's plugin bridge by moving selection
+        sync from push to on-demand pull, removing a full node-tree walk on every click;
+        merged with all 955 tests passing
+        (\href{https://github.com/tathagat22/plumb-mcp/pull/25}{\uline{PR \#25\ \extarrow}}).
+\end{itemize}
+
+\job{MERN Stack Engineer}{Sprouto Group}{Mar 2025 – Nov 2025}
+\begin{itemize}
+  \item Developed and integrated a \textbf{RAG-pattern AI chatbot} in \textbf{7 working days},
+        parsing documents with LlamaParse into Supabase to ground its answers in
+        retrieved sources.
+  \item Led full-stack development within strict deadlines, delivering the
+        corporate website in \textbf{1 month} with SEO-friendly server-side rendering and
+        scroll-based parallax animations.
+  \item Designed a typed \textbf{API integration layer} with centralized error handling, alongside
+        reusable, type-safe React components.
+  \item Managed the database, file storage and client-side server-state caching, cutting load
+        times on slow connections.
+  \item Migrated \textbf{1.9 GB} of data from MySQL on AWS RDS to PostgreSQL on Supabase, and
+        \textbf{3 GB} of files from AWS S3 to Supabase Storage, with \textbf{zero data loss}.
+\end{itemize}
+
+\job{MERN Stack Developer}{CodeFlamme Pvt Ltd}{Jul 2024 – Feb 2025}
+\begin{itemize}
+  \item Built a \textbf{real-time chat system} and live notifications with Socket.io (WebSockets).
+  \item Implemented one-time payments and \textbf{auto-renewing subscriptions} with Stripe and
+        PayPal, plus a referral system and its financial operations.
+  \item Secured routes with role- and region-based authorization, plus Google,
+        LinkedIn and Facebook OAuth sign-in.
+  \item Localized the frontend with i18next and established a multi-language transactional email
+        system on the backend.
+\end{itemize}
+
+
+% ---------------------------------------------------------------------
+%  SKILLS
+% ---------------------------------------------------------------------
+
+\section*{Skills}
+
+\begin{skills}
+  \skill{AI \& Automation}{LLM APIs (Gemini, Groq, Claude), LangChain, Structured Output,
+    Model Fallback, RAG, Prompt Engineering, PII Redaction,
+    NLP (Intent Detection, Entity Extraction, Text Classification), n8n Workflows,
+    Gmail API, WhatsApp}
+  \skill{Languages}{Python, TypeScript, JavaScript, SQL}
+  \skill{Python}{FastAPI, SQLAlchemy 2 (async), asyncpg, Pydantic v2, Alembic,
+    pytest, uv, Ruff, Pyright (strict)}
+  \skill{Frontend}{React.js, Next.js, Redux Toolkit, TanStack Query,
+    React Hook Form, Zod, Tailwind CSS, Material UI, Figma}
+  \skill{Backend}{Node.js, NestJS, GraphQL (Apollo), REST APIs,
+    WebSockets (Socket.io), JWT}
+  \skill{Databases}{PostgreSQL, MySQL, MongoDB, Prisma, Drizzle, Supabase, Firebase}
+  \skill{DevOps \& Testing}{Docker, Docker Compose, Caddy, Oracle Cloud, Vercel, GitHub Actions (CI),
+    Git, Jest/Vitest, React Testing Library}
+\end{skills}
+
+
+\end{document}
