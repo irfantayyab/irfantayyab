@@ -16,6 +16,15 @@ export default defineConfig([
     "resume/**",
   ]),
   {
+    files: ["*.mjs", "scripts/**"],
+    settings: {
+      react: { version: "19.0" },
+    },
+    rules: {
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
+  {
     files: ["**/*.{js,mjs,ts,tsx,mts}"],
     ignores: ["**/*.spec.{ts,tsx}", "**/src/testing/**"],
     rules: {

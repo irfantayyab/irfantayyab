@@ -13,7 +13,12 @@ function git(args, cwd) {
 
 function run(command, cwd) {
   console.log(`\n> ${command}`);
-  const result = spawnSync(command, { cwd, env, shell: true, stdio: "inherit" });
+  const result = spawnSync(command, {
+    cwd,
+    env,
+    shell: true,
+    stdio: "inherit",
+  });
   if (result.status !== 0) {
     console.error(`\nPush blocked: "${command}" failed in ${cwd}`);
     process.exit(result.status ?? 1);
