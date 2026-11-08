@@ -1,0 +1,44 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "globalDependencies": [".nvmrc"],
+  "tasks": {
+    "//#prettier:check": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "apps/**",
+        "!**/node_modules/**",
+        "!**/.turbo/**",
+        "!apps/*/.next/**",
+        "!apps/*/out/**",
+        "!apps/*/next-env.d.ts",
+        "!apps/*/*.tsbuildinfo",
+        "!apps/*/coverage/**"
+      ],
+      "outputs": []
+    },
+    "//#eslint:root": {
+      "inputs": ["*.mjs", "scripts/**", "package.json", "pnpm-lock.yaml"],
+      "outputs": []
+    },
+    "lint": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/eslint.config.mjs"],
+      "outputs": []
+    },
+    "typecheck": {
+      "outputs": []
+    },
+    "test": {
+      "outputs": []
+    },
+    "test:integration": {
+      "outputs": []
+    },
+    "test:all": {
+      "outputs": []
+    },
+    "build": {
+      "dependsOn": ["^build", "typecheck"],
+      "outputs": ["out/**"]
+    }
+  }
+}
