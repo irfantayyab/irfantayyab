@@ -12,9 +12,7 @@ const pages = readdirSync(outDir, { recursive: true, encoding: "utf8" })
   .filter((file) => !file.split("/").some((part) => part.startsWith("_")))
   .filter((file) => file !== "404.html")
   .map((file) =>
-    file === "index.html"
-      ? "/"
-      : `/${file.replace(/(^|\/)index\.html$/, "$1").replace(/\.html$/, "")}`,
+    file === "index.html" ? "/" : `/${file.replace(/\.html$/, "")}`,
   );
 
 function rgb(hex: string) {
@@ -29,12 +27,26 @@ const themes = (["light", "dark"] as const).map((colorScheme) => ({
   background: rgb(pageColors[colorScheme]),
 }));
 
+const allowedElsewhere = new Set(["https://static.cloudflareinsights.com"]);
+let externalRequests: string[] = [];
+
 test.beforeEach(async ({ context, baseURL }) => {
+  externalRequests = [];
   const origin = new URL(baseURL ?? "").origin;
   await context.route(
     (url) => url.origin !== origin,
-    (route) => route.abort(),
+    async (route) => {
+      const url = new URL(route.request().url());
+      if (!allowedElsewhere.has(url.origin)) {
+        externalRequests.push(url.href);
+      }
+      await route.abort();
+    },
   );
+});
+
+test.afterEach(() => {
+  expect(externalRequests, "requests to other sites").toEqual([]);
 });
 
 test("the export has pages to check", () => {
