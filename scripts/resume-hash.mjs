@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { readFileSync, statSync, writeFileSync } from "node:fs";
-import { basename } from "node:path";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 
 const tex = process.argv[2];
 if (!tex?.endsWith(".tex")) {
@@ -8,10 +8,19 @@ if (!tex?.endsWith(".tex")) {
   process.exit(1);
 }
 const pdf = tex.replace(/\.tex$/, ".pdf");
+const log = join(
+  dirname(tex),
+  ".build",
+  basename(tex).replace(/\.tex$/, ".log"),
+);
 
-if (statSync(pdf).mtimeMs < statSync(tex).mtimeMs) {
+if (
+  !existsSync(log) ||
+  !existsSync(pdf) ||
+  statSync(pdf).mtimeMs < statSync(log).mtimeMs
+) {
   console.log(
-    `${basename(pdf)} is older than ${basename(tex)}, so it was not built from it: the hash is left as it was.`,
+    `${basename(pdf)} was not written by this build, which failed: the hash is left as it was.`,
   );
   process.exit(0);
 }
