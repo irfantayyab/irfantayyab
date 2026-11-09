@@ -11,19 +11,29 @@
       "command": "latexmk",
       "args": [
         "-xelatex",
+        "-g",
         "-synctex=1",
         "-interaction=nonstopmode",
         "-file-line-error",
         "-auxdir=.build",
         "-emulate-aux-dir",
         "%DOC%"
-      ]
+      ],
+      "env": {
+        "SOURCE_DATE_EPOCH": "1794182400",
+        "FORCE_SOURCE_DATE": "1"
+      }
+    },
+    {
+      "name": "resume-hash",
+      "command": "node",
+      "args": ["%WORKSPACE_FOLDER%/scripts/resume-hash.mjs", "%DOC_EXT%"]
     }
   ],
   "latex-workshop.latex.recipes": [
     {
       "name": "latexmk (xelatex → .build/)",
-      "tools": ["latexmk-xelatex"]
+      "tools": ["latexmk-xelatex", "resume-hash"]
     }
   ],
   "files.exclude": {

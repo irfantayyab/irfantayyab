@@ -8,7 +8,6 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    passWithNoTests: true,
     projects: [
       {
         extends: true,
