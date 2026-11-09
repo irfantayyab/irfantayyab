@@ -10,6 +10,8 @@ import { resumeHashPath, resumePdfPath, resumeTexPath } from "./source";
 const claims = [
   resume.name,
   resume.headline,
+  resume.email,
+  ...Object.values(resume.links).map(({ label }) => label),
   ...[...resume.education, ...resume.experience].flatMap(
     ({ title, organisation, dates }) =>
       [`${title}, ${organisation}`, dates].filter(Boolean).join(" "),
@@ -46,6 +48,8 @@ describe("the resume's claims", () => {
     expect(tex).toEqual({
       name: resume.name,
       headline: resume.headline,
+      emails: [resume.email],
+      links: Object.values(resume.links),
       sections: [
         { title: "Education", entries: resume.education },
         { title: "Work Experience", entries: resume.experience },

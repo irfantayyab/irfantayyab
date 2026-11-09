@@ -37,7 +37,7 @@ export default function RootLayout({
         <div className="mx-auto box-content max-w-150 px-4">
           <header className="pt-10 pb-12 sm:pt-16">
             <a
-              href="https://github.com/irfantayyab"
+              href={resume.links.github.url}
               rel="me"
               className="font-semibold text-ink no-underline hover:underline"
             >

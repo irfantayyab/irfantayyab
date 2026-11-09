@@ -53,6 +53,8 @@ describe("parseResumeTex", () => {
     expect(parseResumeTex(tex)).toEqual({
       name: "Ada Lovelace",
       headline: "Analytical Engineer",
+      emails: [],
+      links: [],
       sections: [
         {
           title: "Education",
@@ -97,6 +99,26 @@ describe("parseResumeTex", () => {
     expect(parseResumeTex(tex).sections[0]?.entries[0]?.organisation).toBe(
       "100% Ltd",
     );
+  });
+
+  it("reads the contact links and email in order, ignoring other links", () => {
+    const tex = resumeWith(String.raw`
+ada@example.co.uk\quad London\par
+\bluelink{https://github.com/ada}{github.com/ada}\quad
+% \bluelink{https://old.example.com}{old.example.com}
+\bluelink{ https://example.com/ }{R\&D -- site}\par
+\section*{Work Experience}
+\job{Engineer}{Acme}{2024}
+\begin{itemize}
+  \item Merged (\href{https://github.com/acme/pull/1}{PR}).
+\end{itemize}
+`);
+    const resume = parseResumeTex(tex);
+    expect(resume.emails).toEqual(["ada@example.co.uk"]);
+    expect(resume.links).toEqual([
+      { url: "https://github.com/ada", label: "github.com/ada" },
+      { url: "https://example.com/", label: "R&D – site" },
+    ]);
   });
 
   it("fails on a job outside any section", () => {

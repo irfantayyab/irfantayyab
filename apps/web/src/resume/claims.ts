@@ -4,9 +4,29 @@ export type ResumeEntry = {
   dates: string;
 };
 
+export type ResumeLink = {
+  url: string;
+  label: string;
+};
+
 export const resume = {
   name: "Irfan Tayyab",
   headline: "Full-Stack AI Engineer",
+  email: "irfantayyib07@gmail.com",
+  links: {
+    linkedin: {
+      url: "https://www.linkedin.com/in/irfan-tayyab-31b52330b/",
+      label: "linkedin.com/in/irfan-tayyab-31b52330b",
+    },
+    github: {
+      url: "https://github.com/irfantayyab",
+      label: "github.com/irfantayyab",
+    },
+    website: {
+      url: "https://irfantayyab.vercel.app/",
+      label: "irfantayyab.vercel.app",
+    },
+  },
   education: [
     {
       title: "BS in Computer Science",
@@ -39,6 +59,8 @@ export const resume = {
 } as const satisfies {
   name: string;
   headline: string;
+  email: string;
+  links: Readonly<Record<"linkedin" | "github" | "website", ResumeLink>>;
   education: readonly ResumeEntry[];
   experience: readonly ResumeEntry[];
 };
