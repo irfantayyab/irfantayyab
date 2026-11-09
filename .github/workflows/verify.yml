@@ -47,7 +47,7 @@ jobs:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+      name: ${{ github.event_name == 'push' && 'production' || format('preview-pr-{0}', github.event.pull_request.number) }}
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v7
