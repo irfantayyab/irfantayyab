@@ -1,4 +1,5 @@
 import { experienceLinks } from "@/portfolio/experience";
+import { portfolioRepoUrl } from "@/portfolio/links";
 import { ProjectBlock } from "@/portfolio/project-block";
 import { projects } from "@/portfolio/projects";
 import { resume } from "@/resume/claims";
@@ -6,7 +7,7 @@ import { resume } from "@/resume/claims";
 const contactLinks = [
   { label: "GitHub", url: resume.links.github.url },
   { label: "LinkedIn", url: resume.links.linkedin.url },
-  { label: "Email", url: `mailto:${resume.email}` },
+  { label: resume.email, url: `mailto:${resume.email}` },
   { label: "Resume (PDF)", url: "/resume.pdf" },
 ];
 
@@ -26,14 +27,14 @@ export default function HomePage() {
         </p>
         <p>
           For over two years I have shipped React, Next.js and Node.js products
-          at three companies, and my final year project in computer science is
-          an AI platform that routes student queries, the first project below.
+          in teams, and my final year project in computer science is an AI
+          platform that routes student queries, the first project below.
         </p>
         <p>
           I care about software that stays easy to change: typed code, real
           tests, and checks that pass before anything ships. This site is built
           that way, in the open. Its source is on{" "}
-          <a href="https://github.com/irfantayyab/portfolio">GitHub</a>, and the{" "}
+          <a href={portfolioRepoUrl}>GitHub</a>, and the{" "}
           <a href="/resume.pdf">resume is a PDF</a> to read or save.
         </p>
       </div>

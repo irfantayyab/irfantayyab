@@ -1,5 +1,5 @@
 import { resume } from "@/resume/claims";
-import { plumbFixUrl } from "./projects";
+import { plumbFixUrl } from "./links";
 
 type Organisation = (typeof resume.experience)[number]["organisation"];
 

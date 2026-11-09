@@ -161,7 +161,7 @@ test.describe("without JavaScript", () => {
     for (const [name, href] of [
       ["GitHub", resume.links.github.url],
       ["LinkedIn", resume.links.linkedin.url],
-      ["Email", `mailto:${resume.email}`],
+      [resume.email, `mailto:${resume.email}`],
       ["Resume (PDF)", "/resume.pdf"],
     ]) {
       await expect(contact.getByRole("link", { name })).toHaveAttribute(

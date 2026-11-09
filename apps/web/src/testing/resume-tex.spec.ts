@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseResumeTex, texToText } from "./resume-tex";
+import { parseResumeTex, texToText, texToUrl } from "./resume-tex";
 
 const preamble = String.raw`
 \newcommand{\job}[3]{#1, #2\hfill #3\par}
@@ -32,6 +32,20 @@ describe("texToText", () => {
 
   it("refuses markup it cannot turn into plain text", () => {
     expect(() => texToText(String.raw`\textbf{Lead}`)).toThrow(
+      "Unsupported LaTeX",
+    );
+  });
+});
+
+describe("texToUrl", () => {
+  it("turns escapes into the characters they stand for, and nothing else", () => {
+    expect(
+      texToUrl(String.raw` https://x.test/a--b\_c?d=1\&e=50\%\#top `),
+    ).toBe("https://x.test/a--b_c?d=1&e=50%#top");
+  });
+
+  it("refuses markup it cannot turn into a URL", () => {
+    expect(() => texToUrl(String.raw`https://x.test/\textbf{a}`)).toThrow(
       "Unsupported LaTeX",
     );
   });

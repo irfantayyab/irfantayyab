@@ -21,9 +21,20 @@ const escapes: Record<string, string> = {
   "\\$": "$",
 };
 
+function unescape(tex: string): string {
+  return tex.replace(/\\[&%#_$]/g, (escape) => escapes[escape] ?? escape);
+}
+
+export function texToUrl(tex: string): string {
+  const url = unescape(tex).trim();
+  if (/[\\{}\s]/.test(url)) {
+    throw new Error(`Unsupported LaTeX in a resume link: ${tex}`);
+  }
+  return url;
+}
+
 export function texToText(tex: string): string {
-  const text = tex
-    .replace(/\\[&%#_$]/g, (escape) => escapes[escape] ?? escape)
+  const text = unescape(tex)
     .replaceAll("---", "—")
     .replaceAll("--", "–")
     .replaceAll("``", "“")
@@ -81,7 +92,7 @@ function readLinks(body: string): ResumeLink[] {
   for (let match = command.exec(body); match; match = command.exec(body)) {
     const url = readGroup(body, match.index + match[0].length);
     const label = readGroup(body, url.end);
-    links.push({ url: url.value.trim(), label: texToText(label.value) });
+    links.push({ url: texToUrl(url.value), label: texToText(label.value) });
     command.lastIndex = label.end;
   }
   return links;
