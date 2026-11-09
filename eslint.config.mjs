@@ -12,6 +12,8 @@ export default defineConfig([
     "**/out/**",
     "**/.turbo/**",
     "**/.wrangler/**",
+    "**/test-results/**",
+    "**/playwright-report/**",
     "**/coverage/**",
     "**/next-env.d.ts",
     "resume/**",

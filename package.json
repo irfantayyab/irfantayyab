@@ -13,10 +13,11 @@
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
     "test:all": "turbo run test:all",
+    "test:e2e": "turbo run test:e2e",
     "format": "prettier --write .",
     "format:check": "turbo run //#prettier:check",
     "prettier:check": "prettier --check .",
-    "verify": "turbo run //#prettier:check //#eslint:root lint typecheck test:all build",
+    "verify": "turbo run //#prettier:check //#eslint:root lint typecheck test:all build test:e2e",
     "prepare": "husky"
   },
   "devDependencies": {

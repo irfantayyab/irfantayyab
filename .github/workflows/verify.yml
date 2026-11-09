@@ -31,6 +31,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm -F @portfolio/web exec playwright install --with-deps --only-shell chromium
       - run: pnpm verify
         env:
           NEXT_PUBLIC_CF_ANALYTICS_TOKEN: ${{ github.event_name == 'push' && vars.CF_ANALYTICS_TOKEN || '' }}

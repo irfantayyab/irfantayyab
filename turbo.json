@@ -11,6 +11,8 @@
         "!apps/*/.next/**",
         "!apps/*/out/**",
         "!apps/*/.wrangler/**",
+        "!apps/*/test-results/**",
+        "!apps/*/playwright-report/**",
         "!apps/*/next-env.d.ts",
         "!apps/*/*.tsbuildinfo",
         "!apps/*/coverage/**"
@@ -35,6 +37,10 @@
       "outputs": []
     },
     "test:all": {
+      "outputs": []
+    },
+    "test:e2e": {
+      "dependsOn": ["build"],
       "outputs": []
     },
     "build": {
