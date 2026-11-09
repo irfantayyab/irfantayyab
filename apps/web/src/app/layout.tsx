@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { resume } from "@/resume/claims";
 import { newsreader } from "./fonts";
 import "./globals.css";
 import { pageColors } from "./theme";
 
 export const metadata: Metadata = {
   title: {
-    default: "Irfan Tayyab",
-    template: "%s · Irfan Tayyab",
+    default: resume.name,
+    template: `%s · ${resume.name}`,
   },
-  description: "Irfan Tayyab, Full-Stack AI Engineer",
+  description: `${resume.name}, ${resume.headline}`,
 };
 
 export const viewport: Viewport = {

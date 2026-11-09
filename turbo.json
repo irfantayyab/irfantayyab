@@ -34,9 +34,19 @@
       "outputs": []
     },
     "test:integration": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.tex",
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf"
+      ],
       "outputs": []
     },
     "test:all": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.tex",
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf"
+      ],
       "outputs": []
     },
     "test:e2e": {
@@ -44,6 +54,7 @@
       "outputs": []
     },
     "build": {
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf"],
       "dependsOn": ["^build", "typecheck"],
       "env": ["NEXT_PUBLIC_CF_ANALYTICS_TOKEN"],
       "outputs": ["out/**"]

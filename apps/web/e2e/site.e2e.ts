@@ -1,8 +1,10 @@
 import { readdirSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { pageColors } from "../src/app/theme";
+import { resumePdfPath } from "../src/resume/source";
 
 const outDir = fileURLToPath(new URL("../out/", import.meta.url));
 
@@ -105,6 +107,13 @@ test.describe("without JavaScript", () => {
     await expect(page.locator("main a").first()).toBeFocused();
   });
 
+  test("the home page links the resume", async ({ page }) => {
+    await page.goto("/");
+    await expect(
+      page.getByRole("link", { name: "resume is a PDF" }),
+    ).toHaveAttribute("href", "/resume.pdf");
+  });
+
   for (const { colorScheme, background } of themes) {
     test(`the ${colorScheme} theme follows the device`, async ({ page }) => {
       await page.emulateMedia({ colorScheme });
@@ -121,6 +130,20 @@ test("/home redirects to /", async ({ request }) => {
   const response = await request.get("/home", { maxRedirects: 0 });
   expect(response.status()).toBe(301);
   expect(response.headers()["location"]).toBe("/");
+});
+
+test("the resume is the committed PDF, to open or save", async ({
+  request,
+}) => {
+  const response = await request.get("/resume.pdf");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toBe("application/pdf");
+  expect(response.headers()["content-disposition"]).toBe(
+    'inline; filename="Irfan_Tayyab_Resume.pdf"',
+  );
+  expect((await response.body()).equals(await readFile(resumePdfPath))).toBe(
+    true,
+  );
 });
 
 test.describe("accessibility", () => {
