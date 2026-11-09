@@ -14,15 +14,19 @@ const log = join(
   basename(tex).replace(/\.tex$/, ".log"),
 );
 
-if (
-  !existsSync(log) ||
-  !existsSync(pdf) ||
-  statSync(pdf).mtimeMs < statSync(log).mtimeMs
-) {
-  console.log(
-    `${basename(pdf)} was not written by this build, which failed: the hash is left as it was.`,
-  );
+function skip(reason) {
+  console.log(`${reason}: the hash is left as it was.`);
   process.exit(0);
+}
+
+if (!existsSync(log) || !existsSync(pdf)) {
+  skip(`No build of ${basename(tex)} has made a log and a PDF yet`);
+}
+if (statSync(log).mtimeMs < statSync(tex).mtimeMs) {
+  skip(`XeLaTeX did not run on ${basename(tex)} since it was saved`);
+}
+if (statSync(pdf).mtimeMs < statSync(log).mtimeMs) {
+  skip(`${basename(pdf)} was not written by this build, which failed`);
 }
 
 function sha256(data) {

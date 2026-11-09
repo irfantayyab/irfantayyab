@@ -18,7 +18,11 @@
         "-auxdir=.build",
         "-emulate-aux-dir",
         "%DOC%"
-      ]
+      ],
+      "env": {
+        "SOURCE_DATE_EPOCH": "1794182400",
+        "FORCE_SOURCE_DATE": "1"
+      }
     },
     {
       "name": "resume-hash",
