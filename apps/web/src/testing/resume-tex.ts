@@ -24,6 +24,10 @@ export function texToText(tex: string): string {
     .replace(/\\[&%#_$]/g, (escape) => escapes[escape] ?? escape)
     .replaceAll("---", "—")
     .replaceAll("--", "–")
+    .replaceAll("``", "“")
+    .replaceAll("''", "”")
+    .replaceAll("`", "‘")
+    .replaceAll("'", "’")
     .replaceAll("~", " ")
     .replace(/\s+/g, " ")
     .trim();

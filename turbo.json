@@ -37,7 +37,8 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.tex",
-        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf"
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf",
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.sha256"
       ],
       "outputs": []
     },
@@ -45,7 +46,8 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.tex",
-        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf"
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf",
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.sha256"
       ],
       "outputs": []
     },

@@ -18,12 +18,17 @@
         "-emulate-aux-dir",
         "%DOC%"
       ]
+    },
+    {
+      "name": "resume-hash",
+      "command": "node",
+      "args": ["%WORKSPACE_FOLDER%/scripts/resume-hash.mjs", "%DOC_EXT%"]
     }
   ],
   "latex-workshop.latex.recipes": [
     {
       "name": "latexmk (xelatex → .build/)",
-      "tools": ["latexmk-xelatex"]
+      "tools": ["latexmk-xelatex", "resume-hash"]
     }
   ],
   "files.exclude": {

@@ -22,6 +22,10 @@ describe("texToText", () => {
     );
   });
 
+  it("turns quotes into the curly ones XeLaTeX prints", () => {
+    expect(texToText("Master's ``AI'' `ML'")).toBe("Master’s “AI” ‘ML’");
+  });
+
   it("keeps Unicode as it is and collapses whitespace", () => {
     expect(texToText(" Nov 2025 –\n  Oct 2026 ")).toBe("Nov 2025 – Oct 2026");
   });
