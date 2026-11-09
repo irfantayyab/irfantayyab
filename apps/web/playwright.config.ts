@@ -6,7 +6,7 @@ export default defineConfig({
   testDir: "e2e",
   testMatch: "**/*.e2e.ts",
   fullyParallel: true,
-  forbidOnly: Boolean(process.env.CI),
+  forbidOnly: true,
   reporter: "list",
   use: {
     baseURL: `http://127.0.0.1:${port}`,

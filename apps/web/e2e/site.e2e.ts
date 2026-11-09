@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { pageColors } from "../src/app/theme";
 
 const outDir = fileURLToPath(new URL("../out/", import.meta.url));
 
@@ -16,10 +17,25 @@ const pages = readdirSync(outDir, { recursive: true, encoding: "utf8" })
       : `/${file.replace(/(^|\/)index\.html$/, "$1").replace(/\.html$/, "")}`,
   );
 
-const themes = [
-  { colorScheme: "light", background: "rgb(255, 255, 255)" },
-  { colorScheme: "dark", background: "rgb(28, 27, 25)" },
-] as const;
+function rgb(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((start) =>
+    parseInt(hex.slice(start, start + 2), 16),
+  );
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+const themes = (["light", "dark"] as const).map((colorScheme) => ({
+  colorScheme,
+  background: rgb(pageColors[colorScheme]),
+}));
+
+test.beforeEach(async ({ context, baseURL }) => {
+  const origin = new URL(baseURL ?? "").origin;
+  await context.route(
+    (url) => url.origin !== origin,
+    (route) => route.abort(),
+  );
+});
 
 test("the export has pages to check", () => {
   expect(pages).toContain("/");
@@ -68,7 +84,9 @@ test.describe("without JavaScript", () => {
     await page.keyboard.press("Tab");
     const skip = page.getByRole("link", { name: "Skip to content" });
     await expect(skip).toBeFocused();
-    await expect(skip).toBeVisible();
+    const box = await skip.boundingBox();
+    expect(box?.width).toBeGreaterThan(80);
+    expect(box?.height).toBeGreaterThan(20);
     await page.keyboard.press("Enter");
     await expect(page.locator("main")).toBeFocused();
     await page.keyboard.press("Tab");

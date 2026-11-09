@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { newsreader } from "./fonts";
 import "./globals.css";
+import { pageColors } from "./theme";
 
 export const metadata: Metadata = {
   title: {
@@ -13,8 +14,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#1c1b19" },
+    { media: "(prefers-color-scheme: light)", color: pageColors.light },
+    { media: "(prefers-color-scheme: dark)", color: pageColors.dark },
   ],
 };
 
@@ -42,7 +43,7 @@ export default function RootLayout({
               @irfantayyab
             </a>
           </header>
-          <main id="main" tabIndex={-1} className="pb-24 outline-none">
+          <main id="main" tabIndex={-1} className="pb-24">
             {children}
           </main>
         </div>
