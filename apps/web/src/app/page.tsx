@@ -26,9 +26,9 @@ export default function HomePage() {
           what goes out.
         </p>
         <p>
-          For over two years I have shipped React, Next.js and Node.js products
-          in teams, and my final year project in computer science is an AI
-          platform that routes student queries, the first project below.
+          I have shipped React, Next.js and Node.js products in teams, and my
+          final year project in computer science is SQREAS, an AI platform that
+          routes student queries, below.
         </p>
         <p>
           I care about software that stays easy to change: typed code, real
