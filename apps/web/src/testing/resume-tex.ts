@@ -1,4 +1,4 @@
-import type { ResumeEntry } from "@/resume/claims";
+import type { ResumeEntry, ResumeLink } from "@/resume/claims";
 
 export type ResumeSection = {
   title: string;
@@ -8,6 +8,8 @@ export type ResumeSection = {
 export type ResumeTex = {
   name: string;
   headline: string;
+  emails: string[];
+  links: ResumeLink[];
   sections: ResumeSection[];
 };
 
@@ -19,9 +21,20 @@ const escapes: Record<string, string> = {
   "\\$": "$",
 };
 
+function unescape(tex: string): string {
+  return tex.replace(/\\[&%#_$]/g, (escape) => escapes[escape] ?? escape);
+}
+
+export function texToUrl(tex: string): string {
+  const url = unescape(tex).trim();
+  if (/[\\{}\s]/.test(url)) {
+    throw new Error(`Unsupported LaTeX in a resume link: ${tex}`);
+  }
+  return url;
+}
+
 export function texToText(tex: string): string {
-  const text = tex
-    .replace(/\\[&%#_$]/g, (escape) => escapes[escape] ?? escape)
+  const text = unescape(tex)
     .replaceAll("---", "—")
     .replaceAll("--", "–")
     .replaceAll("``", "“")
@@ -73,6 +86,24 @@ function readStyled(body: string, font: string): string {
   return texToText(match[1]);
 }
 
+function readLinks(body: string): ResumeLink[] {
+  const links: ResumeLink[] = [];
+  const command = /\\bluelink(?=\{)/g;
+  for (let match = command.exec(body); match; match = command.exec(body)) {
+    const url = readGroup(body, match.index + match[0].length);
+    const label = readGroup(body, url.end);
+    links.push({ url: texToUrl(url.value), label: texToText(label.value) });
+    command.lastIndex = label.end;
+  }
+  return links;
+}
+
+function readEmails(body: string): string[] {
+  return [...body.matchAll(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g)].map(
+    ([email]) => email,
+  );
+}
+
 export function parseResumeTex(source: string): ResumeTex {
   const tex = stripComments(source);
   const begin = tex.indexOf("\\begin{document}");
@@ -109,6 +140,8 @@ export function parseResumeTex(source: string): ResumeTex {
   return {
     name: readStyled(body, "namefont"),
     headline: readStyled(body, "headlinefont"),
+    emails: readEmails(body),
+    links: readLinks(body),
     sections: sections.filter((section) => section.entries.length > 0),
   };
 }

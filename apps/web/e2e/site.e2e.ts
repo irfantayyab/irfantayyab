@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { pageColors } from "../src/app/theme";
+import { resume } from "../src/resume/claims";
 import { resumePdfPath } from "../src/resume/source";
 
 const outDir = fileURLToPath(new URL("../out/", import.meta.url));
@@ -16,6 +17,10 @@ const pages = readdirSync(outDir, { recursive: true, encoding: "utf8" })
   .map((file) =>
     file === "index.html" ? "/" : `/${file.replace(/\.html$/, "")}`,
   );
+
+function escape(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function rgb(hex: string) {
   const [r, g, b] = [1, 3, 5].map((start) =>
@@ -67,7 +72,7 @@ test.describe("without JavaScript", () => {
       await expect(page.locator("main")).toBeVisible();
       await expect(
         page.getByRole("link", { name: "@irfantayyab" }),
-      ).toHaveAttribute("href", "https://github.com/irfantayyab");
+      ).toHaveAttribute("href", resume.links.github.url);
     });
   }
 
@@ -112,6 +117,68 @@ test.describe("without JavaScript", () => {
     await expect(
       page.getByRole("link", { name: "resume is a PDF" }),
     ).toHaveAttribute("href", "/resume.pdf");
+  });
+
+  test("the home page shows the projects, then the experience", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+      "Projects",
+      "Experience",
+      "Contact",
+    ]);
+    const projects = page.locator("#projects ~ div > article");
+    const count = await projects.count();
+    expect(count).toBeGreaterThanOrEqual(3);
+    expect(count).toBeLessThanOrEqual(5);
+    for (const project of await projects.all()) {
+      await expect(project.getByRole("heading", { level: 3 })).toHaveCount(1);
+      await expect(project).toContainText("The problem.");
+      await expect(project).toContainText("My part.");
+    }
+  });
+
+  test("the home page lists every job from the resume's claims", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.locator("#experience ~ ul > li")).toHaveText(
+      resume.experience.map(
+        ({ title, organisation, dates }) =>
+          new RegExp(
+            `^${escape(`${title}, ${organisation}`)}\\s*${escape(dates)}$`,
+          ),
+      ),
+    );
+  });
+
+  test("the home page links GitHub, LinkedIn, email and the resume", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const contact = page.locator("#contact ~ ul");
+    for (const [name, href] of [
+      ["GitHub", resume.links.github.url],
+      ["LinkedIn", resume.links.linkedin.url],
+      [resume.email, `mailto:${resume.email}`],
+      ["Resume (PDF)", "/resume.pdf"],
+    ]) {
+      await expect(contact.getByRole("link", { name })).toHaveAttribute(
+        "href",
+        href ?? "",
+      );
+    }
+  });
+
+  test("every screenshot has alt text and loads lazily", async ({ page }) => {
+    await page.goto("/");
+    for (const image of await page.locator("main img").all()) {
+      await expect(image).toHaveAttribute("alt", /\S/);
+      await expect(image).toHaveAttribute("loading", "lazy");
+      await expect(image).toHaveAttribute("width", /^\d+$/);
+      await expect(image).toHaveAttribute("height", /^\d+$/);
+    }
   });
 
   for (const { colorScheme, background } of themes) {
