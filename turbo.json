@@ -10,6 +10,7 @@
         "!**/.turbo/**",
         "!apps/*/.next/**",
         "!apps/*/out/**",
+        "!apps/*/.wrangler/**",
         "!apps/*/next-env.d.ts",
         "!apps/*/*.tsbuildinfo",
         "!apps/*/coverage/**"
@@ -38,6 +39,7 @@
     },
     "build": {
       "dependsOn": ["^build", "typecheck"],
+      "env": ["NEXT_PUBLIC_CF_ANALYTICS_TOKEN"],
       "outputs": ["out/**"]
     }
   }

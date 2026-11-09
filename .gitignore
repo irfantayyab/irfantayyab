@@ -4,6 +4,7 @@ node_modules/
 .turbo/
 .next/
 out/
+.wrangler/
 next-env.d.ts
 *.tsbuildinfo
 coverage/

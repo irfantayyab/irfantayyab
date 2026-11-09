@@ -1,4 +1,8 @@
 packages:
   - apps/*
 
+allowBuilds:
+  esbuild: false
+  workerd: false
+
 engineStrict: true
