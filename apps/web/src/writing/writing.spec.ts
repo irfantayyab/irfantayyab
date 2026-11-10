@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { webpHeader } from "@/testing/webp";
 import {
   buildWriting,
+  type PostFile,
   type WritingEntry,
   WritingError,
   type WritingFiles,
@@ -189,13 +191,113 @@ describe("buildWriting", () => {
   describe("the body", () => {
     it.each([
       ["raw HTML", "<div>Hi</div>", /line \d+: raw HTML/],
-      ["an image", "![A cat](cat.png)", /images come with M6/],
       ["a level-1 heading", "# Another title", /level-1 heading/],
     ])("rejects %s", (_, body, pattern) => {
       expectProblem(
         files({ entries: [folder("first-post", { tags: ["ai"] }, body)] }),
         pattern,
       );
+    });
+  });
+
+  describe("images", () => {
+    const catBody = '![A cat](cat.webp "Asleep")';
+
+    function withFiles(
+      postFiles: readonly PostFile[],
+      body = catBody,
+    ): WritingFiles {
+      return files({
+        entries: [
+          {
+            name: "first-post",
+            kind: "folder",
+            post: post(base, body),
+            files: postFiles,
+          },
+        ],
+      });
+    }
+
+    const cat: PostFile = {
+      name: "cat.webp",
+      kind: "file",
+      data: webpHeader(1200, 800),
+    };
+
+    it("serves each image from the post's address, with its size", () => {
+      const [first] = buildWriting(withFiles([cat])).posts;
+      expect(first?.images).toEqual([
+        { file: "cat.webp", data: cat.data, width: 1200, height: 800 },
+      ]);
+      expect(first?.body.children).toContainEqual(
+        expect.objectContaining({
+          tagName: "figure",
+          children: expect.arrayContaining([
+            expect.objectContaining({
+              tagName: "img",
+              properties: {
+                src: "/writing/first-post/cat.webp",
+                alt: "A cat",
+                width: 1200,
+                height: 800,
+                loading: "lazy",
+                decoding: "async",
+              },
+            }),
+          ]),
+        }),
+      );
+    });
+
+    it("fails an image that is not in the folder", () => {
+      expectProblem(
+        withFiles([]),
+        /first-post\/index\.md: line \d+: image "cat\.webp" is not in the post's folder/,
+      );
+    });
+
+    it("fails a file the post does not use", () => {
+      expectProblem(
+        withFiles([cat, { ...cat, name: "dog.webp" }]),
+        /first-post\/dog\.webp: the post does not use it/,
+      );
+    });
+
+    it("fails a file that is not a WebP named in kebab case", () => {
+      expectProblem(
+        withFiles([cat, { ...cat, name: "notes.txt" }]),
+        /first-post\/notes\.txt: a post folder holds only its index\.md and WebP images/,
+      );
+    });
+
+    it("fails a folder inside a post's folder", () => {
+      expectProblem(
+        withFiles([cat, { name: "drafts", kind: "folder" }]),
+        /first-post\/drafts\/: a post folder holds no folders/,
+      );
+    });
+
+    it("fails a file named .webp that is not a WebP", () => {
+      expectProblem(
+        withFiles([{ ...cat, data: new Uint8Array([1, 2, 3]) }]),
+        /first-post\/cat\.webp: is not a WebP image/,
+      );
+    });
+
+    it("fails an image over the budget", () => {
+      expectProblem(
+        withFiles([{ ...cat, data: webpHeader(1200, 800, 150 * 1024 + 1) }]),
+        /first-post\/cat\.webp: 151 KB is over the 150 KB budget/,
+      );
+    });
+
+    it("takes an image at the budget", () => {
+      expect(
+        problemsOf(
+          withFiles([{ ...cat, data: webpHeader(1200, 800, 150 * 1024) }]),
+        ),
+      ).toEqual([]);
     });
   });
 

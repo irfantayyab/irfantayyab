@@ -9,7 +9,9 @@ import { resumePdfPath } from "../src/resume/source";
 import { formatDate } from "../src/writing/date";
 import { loadWritingFrom } from "../src/writing/load";
 import { writingDir } from "../src/writing/source";
-import { postPath, tagPath } from "../src/writing/writing";
+import { calloutLabels } from "../src/writing/markdown";
+import { postFilePath, postPath, tagPath } from "../src/writing/writing";
+import type { Element, Root } from "hast";
 
 const outDir = fileURLToPath(new URL("../out/", import.meta.url));
 
@@ -42,6 +44,58 @@ function rgb(hex: string) {
   );
   return `rgb(${r}, ${g}, ${b})`;
 }
+
+function findAll(node: Root | Element, matches: (element: Element) => boolean) {
+  const found: Element[] = [];
+  for (const child of node.children) {
+    if (child.type === "element") {
+      if (matches(child)) {
+        found.push(child);
+      }
+      found.push(...findAll(child, matches));
+    }
+  }
+  return found;
+}
+
+function textOf(node: Element): string {
+  return node.children
+    .map((child) =>
+      child.type === "text"
+        ? child.value
+        : child.type === "element"
+          ? textOf(child)
+          : "",
+    )
+    .join("");
+}
+
+function codeBlocks(body: Root) {
+  return findAll(body, (element) => element.tagName === "pre").map((pre) => {
+    const code = findAll(pre, (element) => element.tagName === "code")[0];
+    const className = code?.properties.className;
+    return {
+      diagram:
+        Array.isArray(className) && className.includes("language-mermaid"),
+      text: code ? textOf(code).replace(/\n$/, "") : "",
+    };
+  });
+}
+
+const rich = writing.posts.map((post) => {
+  const blocks = codeBlocks(post.body);
+  return {
+    post,
+    callouts: findAll(
+      post.body,
+      (element) => element.properties.role === "note",
+    ).length,
+    code: blocks.filter(({ diagram }) => !diagram).map(({ text }) => text),
+    diagrams: blocks.filter(({ diagram }) => diagram).length,
+    headings: findAll(post.body, (element) => /^h[2-6]$/.test(element.tagName))
+      .length,
+  };
+});
 
 const themes = (["light", "dark"] as const).map((colorScheme) => ({
   colorScheme,
@@ -296,6 +350,112 @@ test.describe("without JavaScript", () => {
     });
   }
 
+  test("the writing shows every kind of rich content somewhere", () => {
+    expect(
+      rich.some(({ callouts }) => callouts > 0),
+      "a callout",
+    ).toBe(true);
+    expect(
+      rich.some(({ code }) => code.length > 0),
+      "code",
+    ).toBe(true);
+    expect(
+      rich.some(({ diagrams }) => diagrams > 0),
+      "a diagram",
+    ).toBe(true);
+    expect(
+      rich.some(({ post }) => post.images.length > 0),
+      "an image",
+    ).toBe(true);
+  });
+
+  for (const { post, callouts, code, headings } of rich) {
+    test(`${postPath(post.slug)} shows its callouts, code and heading links`, async ({
+      page,
+    }) => {
+      await page.goto(postPath(post.slug));
+      const body = page.locator(".post-body");
+      const notes = body.getByRole("note");
+      await expect(notes).toHaveCount(callouts);
+      for (const note of await notes.all()) {
+        await expect(note.locator(".callout-label")).toHaveText(
+          new RegExp(`^(${Object.values(calloutLabels).join("|")})$`),
+        );
+      }
+      await expect(body.locator("pre.shiki")).toHaveText(code);
+      await expect(body.locator(".copy-button")).toHaveCount(0);
+      const links = body.locator(":is(h2, h3, h4, h5, h6) > a.heading-link");
+      await expect(links).toHaveCount(headings);
+      for (const link of await links.all()) {
+        const id = await link.locator("..").getAttribute("id");
+        await expect(link).toHaveAttribute("href", `#${id}`);
+      }
+    });
+
+    test(`${postPath(post.slug)} serves its images, with their size`, async ({
+      page,
+      request,
+    }) => {
+      await page.goto(postPath(post.slug));
+      const images = page.locator(".post-body img");
+      await expect(images).toHaveCount(post.images.length);
+      for (const image of post.images) {
+        const src = postFilePath(post.slug, image.file);
+        const element = page.locator(`.post-body img[src="${src}"]`);
+        await expect(element).toHaveAttribute("alt", /\S/);
+        await expect(element).toHaveAttribute("loading", "lazy");
+        await expect(element).toHaveAttribute("width", String(image.width));
+        await expect(element).toHaveAttribute("height", String(image.height));
+        const response = await request.get(src);
+        expect(response.status()).toBe(200);
+        expect(response.headers()["content-type"]).toBe("image/webp");
+        expect(Buffer.from(image.data).equals(await response.body())).toBe(
+          true,
+        );
+      }
+    });
+
+    for (const { colorScheme } of themes) {
+      test(`${postPath(post.slug)} shows each diagram once in the ${colorScheme} theme`, async ({
+        page,
+      }) => {
+        const { diagrams } = rich.find((item) => item.post === post) ?? {};
+        await page.emulateMedia({ colorScheme });
+        await page.goto(postPath(post.slug));
+        const visible = page.locator(".post-body .diagram svg:visible");
+        await expect(visible).toHaveCount(diagrams ?? 0);
+        for (const svg of await visible.all()) {
+          await expect(svg).toHaveAttribute(
+            "id",
+            new RegExp(`^diagram-${colorScheme}-\\d+$`),
+          );
+          await expect(svg).toHaveAccessibleName(/\S/);
+          await expect(svg).toHaveAccessibleDescription(/\S/);
+          const box = await svg.boundingBox();
+          expect(box?.width ?? 0).toBeGreaterThan(0);
+        }
+      });
+    }
+  }
+
+  test("the export holds each post's images and no others", () => {
+    const shipped = readdirSync(`${outDir}writing`, {
+      recursive: true,
+      encoding: "utf8",
+    })
+      .map((file) => file.replaceAll("\\", "/"))
+      .filter((file) => file.endsWith(".webp"))
+      .map((file) => `/writing/${file}`)
+      .sort();
+    expect(shipped).toEqual(
+      writing.posts
+        .flatMap((post) =>
+          post.images.map(({ file }) => postFilePath(post.slug, file)),
+        )
+        .sort(),
+    );
+  });
+
   test("an unknown post answers 404", async ({ page }) => {
     const response = await page.goto("/writing/no-such-post");
     expect(response?.status()).toBe(404);
@@ -309,6 +469,33 @@ test.describe("without JavaScript", () => {
         "background-color",
         background,
       );
+    });
+  }
+});
+
+test.describe("with JavaScript", () => {
+  for (const { post, code } of rich.filter((item) => item.code.length > 0)) {
+    test(`${postPath(post.slug)} copies each code block`, async ({
+      page,
+      context,
+    }) => {
+      await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+      await page.goto(postPath(post.slug));
+      const buttons = page.locator(".post-body .copy-button");
+      await expect(buttons).toHaveCount(code.length);
+      for (const [i, text] of code.entries()) {
+        const button = buttons.nth(i);
+        await expect(button).toHaveText("Copy");
+        await button.click();
+        await expect(button).toHaveText("Copied");
+        await expect(
+          button.locator("xpath=following-sibling::*[@role='status']"),
+        ).toHaveText("Copied");
+        const copied = await page.evaluate(() =>
+          navigator.clipboard.readText(),
+        );
+        expect(copied.replaceAll("\r\n", "\n")).toBe(text);
+      }
     });
   }
 });

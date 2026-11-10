@@ -11,6 +11,7 @@
         "!apps/*/.next/**",
         "!apps/*/out/**",
         "!apps/*/.wrangler/**",
+        "!apps/*/public/writing/**",
         "!apps/*/test-results/**",
         "!apps/*/playwright-report/**",
         "!apps/*/next-env.d.ts",
@@ -61,7 +62,8 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf",
-        "$TURBO_ROOT$/content/writing/**"
+        "$TURBO_ROOT$/content/writing/**",
+        "$TURBO_ROOT$/scripts/copy-post-images.mjs"
       ],
       "dependsOn": ["^build", "typecheck"],
       "env": ["NEXT_PUBLIC_CF_ANALYTICS_TOKEN"],

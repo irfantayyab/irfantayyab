@@ -3,6 +3,14 @@ import { z } from "zod";
 export const postSlug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const tagSlug = /^[a-z0-9]+$/;
 
+export const imageFile = /^[a-z0-9]+(?:-[a-z0-9]+)*\.webp$/;
+
+export const plainLanguages: ReadonlySet<string> = new Set([
+  "text",
+  "txt",
+  "plaintext",
+]);
+
 export const maxTags = 4;
 
 export const reservedPostSlugs: ReadonlySet<string> = new Set(["tags"]);

@@ -1,10 +1,10 @@
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { imageBudget as budget } from "@/image-budget";
 
 const srcDir = path.join(import.meta.dirname, "..");
 const screenshotsDir = path.join(import.meta.dirname, "screenshots");
-const budget = 150 * 1024;
 const imageFile = /\.(png|jpe?g|gif|webp|avif|bmp|tiff?)$/i;
 
 async function images() {

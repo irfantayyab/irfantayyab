@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { loadWriting } from "@/writing/load";
 import { PostBody } from "@/writing/post-body";
 import { PostDate } from "@/writing/post-date";
+import { renderPost } from "@/writing/render";
 import { tagPath } from "@/writing/writing";
 
 export const dynamicParams = false;
@@ -33,6 +34,7 @@ export default async function PostPage({
   params,
 }: PageProps<"/writing/[slug]">) {
   const { post, tags } = await findPost((await params).slug);
+  const body = await renderPost(post);
   return (
     <article>
       <h1 className="text-4xl/tight font-semibold tracking-tight">
@@ -62,7 +64,7 @@ export default async function PostPage({
         </ul>
       ) : null}
       <div className="mt-10">
-        <PostBody body={post.body} />
+        <PostBody body={body} />
       </div>
     </article>
   );
