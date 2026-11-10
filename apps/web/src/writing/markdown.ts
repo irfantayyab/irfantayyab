@@ -8,7 +8,7 @@ import { bundledLanguages } from "shiki";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { matter } from "vfile-matter";
-import { pageIds } from "@/app/page-ids";
+import { isPageId } from "@/app/page-ids";
 import { imageFile, plainLanguages } from "./schema";
 
 type MarkdownNode = {
@@ -250,7 +250,7 @@ function linkHeading(heading: Element, problems: string[]) {
     return;
   }
   const line = heading.position?.start.line;
-  if (pageIds.has(id)) {
+  if (isPageId(id)) {
     report(
       problems,
       line,

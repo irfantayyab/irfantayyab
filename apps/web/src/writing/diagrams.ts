@@ -5,6 +5,7 @@ import {
   type MermaidRenderer,
   type RenderOptions,
 } from "mermaid-isomorphic";
+import { diagramIdPrefix } from "@/app/page-ids";
 import { pageColors } from "@/app/theme";
 
 export type RenderedDiagram =
@@ -50,7 +51,7 @@ let renderer: MermaidRenderer | undefined;
 function optionsFor(scheme: keyof typeof schemes): RenderOptions {
   return {
     css: fontCss,
-    prefix: `diagram-${scheme}`,
+    prefix: `${diagramIdPrefix}${scheme}`,
     mermaidConfig: {
       theme: "base",
       fontFamily,
@@ -71,13 +72,17 @@ function reason(result: PromiseSettledResult<unknown> | undefined) {
 export async function renderDiagrams(
   diagrams: readonly string[],
 ): Promise<RenderedDiagram[]> {
-  renderer ??= createMermaidRenderer();
-  const render = renderer;
+  const render = (renderer ??= createMermaidRenderer());
   const [light, dark] = await Promise.all(
     (["light", "dark"] as const).map((scheme) =>
       render([...diagrams], optionsFor(scheme)),
     ),
-  );
+  ).catch((error: unknown) => {
+    if (renderer === render) {
+      renderer = undefined;
+    }
+    throw error;
+  });
   return diagrams.map((_, index) => {
     const lightResult = light?.[index];
     const darkResult = dark?.[index];

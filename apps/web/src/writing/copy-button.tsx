@@ -10,6 +10,8 @@ const labels: Record<Result, string> = {
   failed: "Copy failed",
 };
 
+const resetAfter = 2000;
+
 function subscribe() {
   return () => {};
 }
@@ -20,23 +22,29 @@ export function CopyButton() {
     () => true,
     () => false,
   );
-  const [result, setResult] = useState<Result>("idle");
+  const [shown, setShown] = useState<{ result: Result }>({ result: "idle" });
+  const [message, setMessage] = useState("");
   const button = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (result === "idle") {
+    if (shown.result === "idle") {
       return;
     }
-    const timer = setTimeout(() => setResult("idle"), 2000);
+    const timer = setTimeout(() => {
+      setShown({ result: "idle" });
+      setMessage("");
+    }, resetAfter);
     return () => clearTimeout(timer);
-  }, [result]);
+  }, [shown]);
 
   if (!hydrated) {
     return null;
   }
 
   async function copy() {
+    setMessage("");
     const code = button.current?.closest(".code-block")?.querySelector("pre");
+    let result: Result = "copied";
     try {
       if (!code) {
         throw new Error("No code block beside the button");
@@ -44,19 +52,20 @@ export function CopyButton() {
       await navigator.clipboard.writeText(
         (code.textContent ?? "").replace(/\n$/, ""),
       );
-      setResult("copied");
     } catch {
-      setResult("failed");
+      result = "failed";
     }
+    setShown({ result });
+    setMessage(labels[result]);
   }
 
   return (
     <>
       <button ref={button} type="button" onClick={copy} className="copy-button">
-        {labels[result]}
+        {labels[shown.result]}
       </button>
       <span role="status" className="sr-only">
-        {result === "idle" ? "" : labels[result]}
+        {message}
       </span>
     </>
   );

@@ -514,6 +514,39 @@ test.describe("with JavaScript", () => {
       }
     });
 
+    test(`${postPath(post.slug)} confirms a second copy as well as the first`, async ({
+      page,
+      context,
+    }) => {
+      await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+      await page.goto(postPath(post.slug));
+      const button = page.locator(".post-body .copy-button").first();
+      const status = button.locator(
+        "xpath=following-sibling::*[@role='status']",
+      );
+      await button.click();
+      await expect(status).toHaveText("Copied");
+      await page.waitForTimeout(1200);
+      await status.evaluate((element) => {
+        new MutationObserver((_, observer) => {
+          if (element.textContent === "") {
+            element.setAttribute("data-cleared", "");
+            observer.disconnect();
+          }
+        }).observe(element, {
+          childList: true,
+          characterData: true,
+          subtree: true,
+        });
+      });
+      await button.click();
+      await expect(status).toHaveAttribute("data-cleared", "");
+      await expect(status).toHaveText("Copied");
+      await page.waitForTimeout(1200);
+      await expect(button).toHaveText("Copied");
+      await expect(button).toHaveText("Copy", { timeout: 5000 });
+    });
+
     test(`${postPath(post.slug)} says when a copy fails`, async ({ page }) => {
       await page.addInitScript(() => {
         Object.defineProperty(navigator, "clipboard", {
