@@ -1,7 +1,13 @@
 import type { Root } from "hast";
 import { parse as parseYaml } from "yaml";
 import { parseMarkdown } from "./markdown";
-import { frontMatterSchema, issues, postSlug, tagsSchema } from "./schema";
+import {
+  frontMatterSchema,
+  issues,
+  postSlug,
+  reservedPostSlugs,
+  tagsSchema,
+} from "./schema";
 
 export const postFile = "index.md";
 export const tagsFile = "tags.yaml";
@@ -75,6 +81,9 @@ function readPost(
   if (!postSlug.test(slug)) {
     problems.push(`${slug}/: a post's folder name is its slug, in kebab case`);
   }
+  if (reservedPostSlugs.has(slug)) {
+    problems.push(`${slug}/: "${slug}" is reserved for /writing/${slug}/…`);
+  }
   const markdown = parseMarkdown(source);
   problems.push(...markdown.problems.map((problem) => `${where}: ${problem}`));
   const front = frontMatterSchema.safeParse(markdown.matter);
@@ -91,6 +100,11 @@ function readPost(
   }
   if (redirectFrom.includes(slug)) {
     problems.push(`${where}: redirectFrom names the post's own slug`);
+  }
+  for (const old of redirectFrom.filter((old) => reservedPostSlugs.has(old))) {
+    problems.push(
+      `${where}: redirectFrom names "${old}", reserved for /writing/${old}/…`,
+    );
   }
   return problems.length === before
     ? { slug, ...front.data, body: markdown.body }
@@ -197,6 +211,12 @@ export function buildWriting(files: WritingFiles): Writing {
         posts.push(post);
       }
     }
+  }
+
+  if (!files.entries.some((entry) => entry.kind === "folder")) {
+    problems.push(
+      "content/writing needs at least one post: the static export cannot build /writing/[slug] without one",
+    );
   }
 
   const tags = readTags(files.tags, problems);

@@ -5,6 +5,8 @@ export const tagSlug = /^[a-z0-9]+$/;
 
 export const maxTags = 4;
 
+export const reservedPostSlugs: ReadonlySet<string> = new Set(["tags"]);
+
 const text = z.string().trim().min(1);
 const day = z.iso.date();
 
@@ -15,8 +17,8 @@ export const frontMatterSchema = z.strictObject({
   updated: day.optional(),
   tags: z
     .array(z.string().regex(tagSlug, "a tag is a slug of a-z and 0-9"))
-    .max(maxTags)
-    .default([]),
+    .min(1, "a post has at least one tag, so every tag page has a post")
+    .max(maxTags),
   redirectFrom: z
     .array(z.string().regex(postSlug, "an old slug is kebab case"))
     .default([]),

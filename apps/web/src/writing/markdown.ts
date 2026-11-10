@@ -7,6 +7,7 @@ import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { matter } from "vfile-matter";
+import { pageIds } from "@/app/page-ids";
 
 type MarkdownNode = {
   type: string;
@@ -55,6 +56,21 @@ function check(node: MarkdownNode, problems: string[]) {
   }
 }
 
+function checkIds(node: Root | Element, problems: string[]) {
+  for (const child of node.children) {
+    if (child.type !== "element") {
+      continue;
+    }
+    const id = child.properties.id;
+    if (typeof id === "string" && pageIds.has(id)) {
+      const line = child.position?.start.line;
+      const problem = `the heading's id "${id}" is taken by the page itself, so rename the heading`;
+      problems.push(line ? `line ${line}: ${problem}` : problem);
+    }
+    checkIds(child, problems);
+  }
+}
+
 function scrollTables<T extends Root | Element>(node: T): T {
   node.children = node.children.map((child: RootContent) => {
     if (child.type !== "element") {
@@ -85,6 +101,8 @@ export function parseMarkdown(source: string): ParsedMarkdown {
   }
   const tree = processor.parse(file);
   check(tree, problems);
-  const body = scrollTables(processor.runSync(tree, file));
+  const html = processor.runSync(tree, file);
+  checkIds(html, problems);
+  const body = scrollTables(html);
   return { matter: file.data.matter ?? {}, body, problems };
 }

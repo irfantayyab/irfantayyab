@@ -140,7 +140,7 @@ test.describe("without JavaScript", () => {
     await expect(page.getByRole("heading", { level: 2 })).toHaveText([
       "Projects",
       "Experience",
-      ...(writing.posts.length > 0 ? ["Writing"] : []),
+      "Writing",
       "Contact",
     ]);
     const projects = page.locator("#projects ~ div > article");
@@ -227,15 +227,12 @@ test.describe("without JavaScript", () => {
     const section = page.locator("section", {
       has: page.getByRole("heading", { level: 2, name: "Writing" }),
     });
-    await expect(section).toHaveCount(latest.length > 0 ? 1 : 0);
-    if (latest.length > 0) {
-      await expect(section.locator("li a")).toHaveText(
-        latest.map(({ title }) => title),
-      );
-      await expect(
-        section.getByRole("link", { name: "All writing" }),
-      ).toHaveAttribute("href", "/writing");
-    }
+    await expect(section.locator("li a")).toHaveText(
+      latest.map(({ title }) => title),
+    );
+    await expect(
+      section.getByRole("link", { name: "All writing" }),
+    ).toHaveAttribute("href", "/writing");
   });
 
   test("/writing lists every post, newest first", async ({ page }) => {

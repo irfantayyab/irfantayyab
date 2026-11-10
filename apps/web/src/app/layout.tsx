@@ -4,6 +4,7 @@ import { resume } from "@/resume/claims";
 import { newsreader } from "./fonts";
 import "./globals.css";
 import { Nav } from "./nav";
+import { mainId } from "./page-ids";
 import { pageColors } from "./theme";
 
 export const metadata: Metadata = {
@@ -30,7 +31,7 @@ export default function RootLayout({
     <html lang="en" className={newsreader.variable}>
       <body className="bg-page font-serif text-lg/[1.7] text-ink antialiased">
         <a
-          href="#main"
+          href={`#${mainId}`}
           className="sr-only font-sans text-base focus:not-sr-only focus:absolute focus:top-3 focus:left-4 focus:bg-page focus:px-2 focus:py-1 focus:text-ink"
         >
           Skip to content
@@ -46,7 +47,7 @@ export default function RootLayout({
             </a>
             <Nav />
           </header>
-          <main id="main" tabIndex={-1} className="pb-24">
+          <main id={mainId} tabIndex={-1} className="pb-24">
             {children}
           </main>
         </div>

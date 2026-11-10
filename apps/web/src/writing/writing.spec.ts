@@ -27,6 +27,7 @@ const base = {
   title: "A post",
   date: "2026-11-10",
   description: "What the post is about.",
+  tags: ["ai"],
 };
 
 function folder(name: string, front: Front = {}, body?: string): WritingEntry {
@@ -76,10 +77,11 @@ describe("buildWriting", () => {
     expect(writing.redirects).toEqual([]);
   });
 
-  it("allows no posts at all", () => {
-    expect(
-      buildWriting({ entries: [], tags: "", published: "" }).posts,
-    ).toEqual([]);
+  it("requires at least one post, or the export cannot build", () => {
+    expectProblem(
+      { entries: [], tags: "", published: "" },
+      /needs at least one post/,
+    );
   });
 
   it("sorts posts newest first, then by slug", () => {
@@ -208,6 +210,23 @@ describe("buildWriting", () => {
       );
     });
 
+    it("refuses a reserved slug as a folder name", () => {
+      expectProblem(
+        files({
+          entries: [...files().entries, folder("tags")],
+          published: "first-post\ntags\n",
+        }),
+        /tags\/: "tags" is reserved/,
+      );
+    });
+
+    it("refuses a reserved slug in redirectFrom", () => {
+      expectProblem(
+        files({ entries: [folder("first-post", { redirectFrom: ["tags"] })] }),
+        /redirectFrom names "tags", reserved/,
+      );
+    });
+
     it("requires each post folder to hold its index.md", () => {
       expectProblem(
         files({
@@ -227,11 +246,13 @@ describe("buildWriting", () => {
     });
 
     it("requires tags.yaml and published.txt", () => {
-      const problems = problemsOf({ entries: [] });
-      expect(problems).toEqual([
-        "tags.yaml is missing",
-        "published.txt is missing",
-      ]);
+      const problems = problemsOf({ entries: files().entries });
+      expect(problems).toEqual(
+        expect.arrayContaining([
+          "tags.yaml is missing",
+          "published.txt is missing",
+        ]),
+      );
     });
   });
 
@@ -243,6 +264,13 @@ describe("buildWriting", () => {
           tags: "a: {label: A}\nb: {label: B}\nc: {label: C}\nd: {label: D}\ne: {label: E}\n",
         }),
         /tags/,
+      );
+    });
+
+    it("requires at least one tag on a post", () => {
+      expectProblem(
+        files({ entries: [folder("first-post", { tags: [] })] }),
+        /a post has at least one tag/,
       );
     });
 

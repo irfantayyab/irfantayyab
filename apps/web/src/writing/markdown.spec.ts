@@ -18,6 +18,12 @@ describe("parseMarkdown", () => {
     ]);
   });
 
+  it("refuses a heading whose id the page already uses", () => {
+    expect(parseMarkdown("Text.\n\n## Main\n").problems).toEqual([
+      `line 3: the heading's id "main" is taken by the page itself, so rename the heading`,
+    ]);
+  });
+
   it("gives empty front matter when there is none", () => {
     expect(parseMarkdown("Text.\n").matter).toEqual({});
   });

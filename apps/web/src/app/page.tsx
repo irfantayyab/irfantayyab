@@ -82,19 +82,17 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      {latest.length > 0 ? (
-        <section aria-labelledby="writing" className="mt-16">
-          <h2 id="writing" className="text-2xl font-semibold tracking-tight">
-            Writing
-          </h2>
-          <div className="mt-6">
-            <PostList posts={latest} descriptions={false} />
-          </div>
-          <p className="mt-6 font-sans text-base">
-            <Link href="/writing">All writing</Link>
-          </p>
-        </section>
-      ) : null}
+      <section aria-labelledby="writing" className="mt-16">
+        <h2 id="writing" className="text-2xl font-semibold tracking-tight">
+          Writing
+        </h2>
+        <div className="mt-6">
+          <PostList posts={latest} descriptions={false} />
+        </div>
+        <p className="mt-6 font-sans text-base">
+          <Link href="/writing">All writing</Link>
+        </p>
+      </section>
 
       <section aria-labelledby="contact" className="mt-16">
         <h2 id="contact" className="text-2xl font-semibold tracking-tight">

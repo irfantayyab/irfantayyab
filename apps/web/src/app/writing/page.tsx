@@ -13,11 +13,7 @@ export default async function WritingPage() {
     <>
       <h1 className="text-4xl/tight font-semibold tracking-tight">Writing</h1>
       <div className="mt-10">
-        {posts.length > 0 ? (
-          <PostList posts={posts} />
-        ) : (
-          <p>Nothing here yet.</p>
-        )}
+        <PostList posts={posts} />
       </div>
     </>
   );
