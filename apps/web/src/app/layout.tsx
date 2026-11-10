@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { resume } from "@/resume/claims";
 import { newsreader } from "./fonts";
 import "./globals.css";
+import { Nav } from "./nav";
 import { pageColors } from "./theme";
 
 export const metadata: Metadata = {
@@ -35,7 +36,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <div className="mx-auto box-content max-w-150 px-4">
-          <header className="pt-10 pb-12 sm:pt-16">
+          <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 pt-10 pb-12 sm:pt-16">
             <a
               href={resume.links.github.url}
               rel="me"
@@ -43,6 +44,7 @@ export default function RootLayout({
             >
               @irfantayyab
             </a>
+            <Nav />
           </header>
           <main id="main" tabIndex={-1} className="pb-24">
             {children}

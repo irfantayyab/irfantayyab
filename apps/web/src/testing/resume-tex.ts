@@ -5,12 +5,19 @@ export type ResumeSection = {
   entries: ResumeEntry[];
 };
 
+export type ResumeJobLinks = {
+  title: string;
+  organisation: string;
+  urls: string[];
+};
+
 export type ResumeTex = {
   name: string;
   headline: string;
   emails: string[];
   links: ResumeLink[];
   sections: ResumeSection[];
+  jobLinks: ResumeJobLinks[];
 };
 
 const escapes: Record<string, string> = {
@@ -98,6 +105,17 @@ function readLinks(body: string): ResumeLink[] {
   return links;
 }
 
+function readHrefs(tex: string): string[] {
+  const urls: string[] = [];
+  const command = /\\(?:href|project|bluelink)(?=\{)/g;
+  for (let match = command.exec(tex); match; match = command.exec(tex)) {
+    const url = readGroup(tex, match.index + match[0].length);
+    urls.push(texToUrl(url.value));
+    command.lastIndex = url.end;
+  }
+  return urls;
+}
+
 function readEmails(body: string): string[] {
   return [...body.matchAll(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g)].map(
     ([email]) => email,
@@ -113,8 +131,17 @@ export function parseResumeTex(source: string): ResumeTex {
   const body = tex.slice(begin);
 
   const sections: ResumeSection[] = [];
+  const jobs: { title: string; organisation: string; start: number }[] = [];
+  const spans: { title: string; organisation: string; text: string }[] = [];
+  const closeJob = (end: number) => {
+    const job = jobs.pop();
+    if (job) {
+      spans.push({ ...job, text: body.slice(job.start, end) });
+    }
+  };
   const commands = /\\section\*(?=\{)|\\job(?=\{)/g;
   for (let match = commands.exec(body); match; match = commands.exec(body)) {
+    closeJob(match.index);
     let end = match.index + match[0].length;
     const groups: string[] = [];
     const count = match[0] === "\\job" ? 3 : 1;
@@ -132,10 +159,13 @@ export function parseResumeTex(source: string): ResumeTex {
         throw new Error(`\\job{${title}} comes before any \\section*`);
       }
       section.entries.push({ title, organisation, dates });
+      jobs.push({ title, organisation, start: end });
     } else {
       sections.push({ title: groups[0] ?? "", entries: [] });
     }
   }
+
+  closeJob(body.length);
 
   return {
     name: readStyled(body, "namefont"),
@@ -143,5 +173,10 @@ export function parseResumeTex(source: string): ResumeTex {
     emails: readEmails(body),
     links: readLinks(body),
     sections: sections.filter((section) => section.entries.length > 0),
+    jobLinks: spans.map(({ title, organisation, text }) => ({
+      title,
+      organisation,
+      urls: readHrefs(text),
+    })),
   };
 }
