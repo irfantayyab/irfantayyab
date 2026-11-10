@@ -115,7 +115,7 @@ function checkFence(node: MarkdownNode, context: Context) {
   }
 }
 
-function makeCallout(node: MarkdownNode, context: Context) {
+function makeCallout(node: MarkdownNode, topLevel: boolean, context: Context) {
   const first = node.children?.[0];
   const text = first?.type === "paragraph" ? first.children?.[0] : undefined;
   const match =
@@ -124,27 +124,39 @@ function makeCallout(node: MarkdownNode, context: Context) {
     return;
   }
   const line = node.position?.start.line;
-  const type = match[1] ?? "";
+  const marker = match[0];
+  if (!topLevel) {
+    report(
+      context.problems,
+      line,
+      `GitHub renders ${marker} only in a quote at the top level, not inside a list or another quote`,
+    );
+    return;
+  }
+  const type = (match[1] ?? "").toUpperCase();
   if (!Object.hasOwn(calloutLabels, type)) {
     report(
       context.problems,
       line,
-      `"[!${type}]" is no callout; use [!NOTE], [!TIP], [!IMPORTANT], [!WARNING] or [!CAUTION]`,
+      `"${marker}" is no callout; use [!NOTE], [!TIP], [!IMPORTANT], [!WARNING] or [!CAUTION]`,
     );
     return;
   }
-  const rest = (text.value ?? "").slice(match[0].length);
-  if (rest !== "" && !rest.startsWith("\n")) {
+  const rest = (text.value ?? "").slice(marker.length);
+  if (rest !== "" && !/^\r?\n/.test(rest)) {
     report(
       context.problems,
       line,
-      `put [!${type}] on a line of its own, as GitHub needs`,
+      `put ${marker} on a line of its own, as GitHub needs`,
     );
     return;
   }
-  text.value = rest.slice(1);
+  text.value = rest.replace(/^\r?\n/, "");
   if (text.value === "") {
     first.children.shift();
+    if (first.children[0]?.type === "break") {
+      first.children.shift();
+    }
   }
   const children = node.children ?? [];
   if (first.children.length === 0) {
@@ -179,7 +191,7 @@ function makeCallout(node: MarkdownNode, context: Context) {
   });
 }
 
-function check(node: MarkdownNode, context: Context) {
+function check(node: MarkdownNode, context: Context, parent?: MarkdownNode) {
   const line = node.position?.start.line;
   switch (node.type) {
     case "html":
@@ -203,7 +215,7 @@ function check(node: MarkdownNode, context: Context) {
       checkFence(node, context);
       break;
     case "blockquote":
-      makeCallout(node, context);
+      makeCallout(node, parent?.type === "root", context);
       break;
     case "heading":
       if (node.depth === 1) {
@@ -216,7 +228,7 @@ function check(node: MarkdownNode, context: Context) {
       break;
   }
   for (const child of node.children ?? []) {
-    check(child, context);
+    check(child, context, node);
   }
 }
 
@@ -232,7 +244,9 @@ function holdsLink(node: Element): boolean {
 
 function linkHeading(heading: Element, problems: string[]) {
   const id = heading.properties.id;
-  if (typeof id !== "string") {
+  const className = heading.properties.className;
+  const hidden = Array.isArray(className) && className.includes("sr-only");
+  if (typeof id !== "string" || hidden) {
     return;
   }
   const line = heading.position?.start.line;

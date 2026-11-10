@@ -2,7 +2,8 @@ import type { Element } from "hast";
 import { chromium } from "playwright";
 import { describe, expect, it } from "vitest";
 import { parseMarkdown } from "./markdown";
-import { diagramTag, renderBody } from "./render";
+import { diagramTag, renderBody, renderPost } from "./render";
+import type { Post } from "./writing";
 
 const hasBrowser = await chromium.launch().then(
   async (browser) => {
@@ -45,6 +46,26 @@ describe.skipIf(!hasBrowser)("renderBody with diagrams", () => {
       expect(markup).not.toContain("<foreignObject");
     }
     expect(light).not.toEqual(dark);
+  });
+
+  it("renders a failed post again on the next request, instead of keeping the failure", async () => {
+    const post: Post = {
+      slug: "a-post",
+      title: "A post",
+      date: "2026-11-11",
+      description: "A post.",
+      tags: ["ai"],
+      redirectFrom: [],
+      body: parseMarkdown(
+        "```mermaid\naccTitle: A\naccDescr: B\nnot a diagram\n```\n",
+      ).body,
+      images: [],
+    };
+    const first = renderPost(post);
+    await expect(first).rejects.toThrow(/did not render/);
+    const second = renderPost(post);
+    expect(second).not.toBe(first);
+    await expect(second).rejects.toThrow(/did not render/);
   });
 
   it("fails a diagram too wide for the column", async () => {

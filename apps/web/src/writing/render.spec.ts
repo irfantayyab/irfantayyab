@@ -2,7 +2,8 @@ import type { Element, Root } from "hast";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "@/testing/contrast";
 import { parseMarkdown } from "./markdown";
-import { highlight, renderBody } from "./render";
+import { highlight, renderBody, renderPost } from "./render";
+import type { Post } from "./writing";
 
 const samples: Record<string, string> = {
   ts: `// A comment\nimport { a } from "b";\nexport class C<T> extends D {\n  #x = 1n;\n  m(y: T): string | null {\n    return \`\${this.#x}\` ?? /re+/g.source;\n  }\n}\n`,
@@ -63,6 +64,33 @@ describe("highlight", () => {
     const pre = await highlight("x", "text");
     expect(pre.tagName).toBe("pre");
     expect(pre.properties.tabindex ?? pre.properties.tabIndex).toBe("0");
+  });
+});
+
+function postWith(source: string): Post {
+  return {
+    slug: "a-post",
+    title: "A post",
+    date: "2026-11-11",
+    description: "A post.",
+    tags: ["ai"],
+    redirectFrom: [],
+    body: parseMarkdown(source).body,
+    images: [],
+  };
+}
+
+describe("renderPost", () => {
+  it("renders a post's body once", () => {
+    const post = postWith("```ts\nconst a = 1;\n```\n");
+    expect(renderPost(post)).toBe(renderPost({ ...post }));
+  });
+
+  it("renders again when the post is read again, as in a dev server after a save", async () => {
+    const before = postWith("Old text.\n");
+    const after = postWith("New text.\n");
+    expect(JSON.stringify(await renderPost(before))).toContain("Old text.");
+    expect(JSON.stringify(await renderPost(after))).toContain("New text.");
   });
 });
 

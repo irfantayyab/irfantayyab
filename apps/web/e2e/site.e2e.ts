@@ -92,8 +92,16 @@ const rich = writing.posts.map((post) => {
     ).length,
     code: blocks.filter(({ diagram }) => !diagram).map(({ text }) => text),
     diagrams: blocks.filter(({ diagram }) => diagram).length,
-    headings: findAll(post.body, (element) => /^h[2-6]$/.test(element.tagName))
-      .length,
+    headings: findAll(
+      post.body,
+      (element) =>
+        /^h[2-6]$/.test(element.tagName) &&
+        !(
+          Array.isArray(element.properties.className) &&
+          element.properties.className.includes("sr-only")
+        ),
+    ).length,
+    images: findAll(post.body, (element) => element.tagName === "img").length,
   };
 });
 
@@ -367,9 +375,13 @@ test.describe("without JavaScript", () => {
       rich.some(({ post }) => post.images.length > 0),
       "an image",
     ).toBe(true);
+    expect(
+      rich.some(({ headings }) => headings > 0),
+      "a heading link",
+    ).toBe(true);
   });
 
-  for (const { post, callouts, code, headings } of rich) {
+  for (const { post, callouts, code, headings, images } of rich) {
     test(`${postPath(post.slug)} shows its callouts, code and heading links`, async ({
       page,
     }) => {
@@ -397,15 +409,19 @@ test.describe("without JavaScript", () => {
       request,
     }) => {
       await page.goto(postPath(post.slug));
-      const images = page.locator(".post-body img");
-      await expect(images).toHaveCount(post.images.length);
+      await expect(page.locator(".post-body img")).toHaveCount(images);
       for (const image of post.images) {
         const src = postFilePath(post.slug, image.file);
-        const element = page.locator(`.post-body img[src="${src}"]`);
-        await expect(element).toHaveAttribute("alt", /\S/);
-        await expect(element).toHaveAttribute("loading", "lazy");
-        await expect(element).toHaveAttribute("width", String(image.width));
-        await expect(element).toHaveAttribute("height", String(image.height));
+        const elements = await page
+          .locator(`.post-body img[src="${src}"]`)
+          .all();
+        expect(elements.length, src).toBeGreaterThan(0);
+        for (const element of elements) {
+          await expect(element).toHaveAttribute("alt", /\S/);
+          await expect(element).toHaveAttribute("loading", "lazy");
+          await expect(element).toHaveAttribute("width", String(image.width));
+          await expect(element).toHaveAttribute("height", String(image.height));
+        }
         const response = await request.get(src);
         expect(response.status()).toBe(200);
         expect(response.headers()["content-type"]).toBe("image/webp");
@@ -496,6 +512,22 @@ test.describe("with JavaScript", () => {
         );
         expect(copied.replaceAll("\r\n", "\n")).toBe(text);
       }
+    });
+
+    test(`${postPath(post.slug)} says when a copy fails`, async ({ page }) => {
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, "clipboard", {
+          value: { writeText: () => Promise.reject(new Error("Denied")) },
+        });
+      });
+      await page.goto(postPath(post.slug));
+      const button = page.locator(".post-body .copy-button").first();
+      await button.click();
+      await expect(button).toHaveText("Copy failed");
+      await expect(
+        button.locator("xpath=following-sibling::*[@role='status']"),
+      ).toHaveText("Copy failed");
+      await expect(button).toHaveText("Copy", { timeout: 5000 });
     });
   }
 });

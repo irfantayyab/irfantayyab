@@ -78,6 +78,30 @@ describe("parseMarkdown", () => {
       ).toEqual(["p", "p"]);
     });
 
+    it.each([
+      ["lowercase", "> [!note]\n> Text.\n"],
+      ["mixed case", "> [!Warning]\n> Text.\n"],
+      ["CRLF line endings", "> [!NOTE]\r\n> Text.\r\n"],
+    ])("takes a marker in %s, as GitHub does", (_, source) => {
+      const { body, problems } = parseMarkdown(source);
+      expect(problems).toEqual([]);
+      const [callout] = elements(body.children);
+      expect(callout?.properties.role).toBe("note");
+      const [, text] = elements(callout?.children ?? []);
+      expect(text?.children[0]).toEqual(
+        expect.objectContaining({ type: "text", value: "Text." }),
+      );
+    });
+
+    it("drops the line break of a marker that ends in two spaces", () => {
+      const { body, problems } = parseMarkdown("> [!NOTE]  \n> Text.\n");
+      expect(problems).toEqual([]);
+      const [, text] = elements(elements(body.children)[0]?.children ?? []);
+      expect(text?.children).toEqual([
+        expect.objectContaining({ type: "text", value: "Text." }),
+      ]);
+    });
+
     it("leaves a plain blockquote as it is", () => {
       const { body } = parseMarkdown("> Just a quote.\n");
       expect(elements(body.children)[0]?.tagName).toBe("blockquote");
@@ -89,7 +113,16 @@ describe("parseMarkdown", () => {
         "> [!NOTES]\n> Text.\n",
         /"\[!NOTES\]" is no callout/,
       ],
-      ["a lowercase type", "> [!note]\n> Text.\n", /"\[!note\]" is no callout/],
+      [
+        "a callout inside a list",
+        "- > [!NOTE]\n  > Text.\n",
+        /line 1: GitHub renders \[!NOTE\] only in a quote at the top level/,
+      ],
+      [
+        "a callout inside another quote",
+        "> > [!NOTE]\n> > Text.\n",
+        /line 1: GitHub renders \[!NOTE\] only in a quote at the top level/,
+      ],
       [
         "text on the marker's line",
         "> [!WARNING] Careful.\n",
@@ -123,6 +156,20 @@ describe("parseMarkdown", () => {
           children: [{ tagName: "a", properties: { href: "#a-sub-heading" } }],
         },
       ]);
+    });
+
+    it("leaves the hidden footnotes heading unlinked", () => {
+      const { body, problems } = parseMarkdown("A[^1].\n\n[^1]: Note.\n");
+      expect(problems).toEqual([]);
+      const section = elements(body.children).find(
+        ({ tagName }) => tagName === "section",
+      );
+      const [heading] = elements(section?.children ?? []);
+      expect(heading).toMatchObject({
+        tagName: "h2",
+        properties: { id: "footnote-label", className: ["sr-only"] },
+      });
+      expect(elements(heading?.children ?? [])).toEqual([]);
     });
 
     it("refuses a heading that holds a link", () => {

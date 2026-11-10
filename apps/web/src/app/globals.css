@@ -154,7 +154,7 @@
   }
 
   .post-body .code-block:has(.copy-button) pre {
-    padding-right: 5rem;
+    padding-right: 7rem;
   }
 
   @media (prefers-color-scheme: dark) {

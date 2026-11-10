@@ -147,13 +147,16 @@ export async function renderBody(slug: string, body: Root): Promise<Root> {
   return tree;
 }
 
-const rendered = new Map<string, Promise<Root>>();
+const rendered = new WeakMap<Root, Promise<Root>>();
 
 export function renderPost(post: Post): Promise<Root> {
-  let body = rendered.get(post.slug);
+  let body = rendered.get(post.body);
   if (!body) {
-    body = renderBody(post.slug, post.body);
-    rendered.set(post.slug, body);
+    body = renderBody(post.slug, post.body).catch((error: unknown) => {
+      rendered.delete(post.body);
+      throw error;
+    });
+    rendered.set(post.body, body);
   }
   return body;
 }
