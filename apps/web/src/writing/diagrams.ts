@@ -56,7 +56,13 @@ function optionsFor(scheme: keyof typeof schemes): RenderOptions {
       theme: "base",
       fontFamily,
       htmlLabels: false,
-      themeVariables: { ...schemes[scheme], fontFamily, fontSize: "16px" },
+      themeVariables: {
+        ...schemes[scheme],
+        edgeLabelBackground: schemes[scheme].background,
+        fontFamily,
+        fontSize: "16px",
+      },
+      themeCSS: `.edgeLabel rect { opacity: 1; fill: ${schemes[scheme].background}; }`,
     },
   };
 }

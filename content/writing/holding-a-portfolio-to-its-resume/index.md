@@ -19,7 +19,7 @@ That alone does not keep anything true. It only means there is one place to chec
 
 The resume is a LaTeX file in the same repository as the site. An integration test reads it, finds every job entry and the header's links, and compares them with the module, in order and both ways. A job added to the resume but not to the site fails the test, and so does one removed from only one side.
 
-![The top of the resume: the name, the headline, the contact links, and the first job with its dates](resume-header.webp "The header and the first job: every line here is a claim the site repeats")
+![The top of the resume PDF: the name Irfan Tayyab, and under it the headline Full-Stack AI Engineer](resume-headline.webp "The name and headline at the top of the resume, the first claims the site repeats word for word")
 
 A claim on the site can only change in the same commit as the resume, or the build goes red.
 

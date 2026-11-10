@@ -449,6 +449,23 @@ test.describe("without JavaScript", () => {
           await expect(svg).toHaveAccessibleDescription(/\S/);
           const box = await svg.boundingBox();
           expect(box?.width ?? 0).toBeGreaterThan(0);
+          const labelBoxes = await svg
+            .locator(".edgeLabel rect")
+            .evaluateAll((rects) =>
+              rects.map((rect) => {
+                const style = getComputedStyle(rect);
+                return { opacity: style.opacity, fill: style.fill };
+              }),
+            );
+          const background = themes.find(
+            (theme) => theme.colorScheme === colorScheme,
+          )?.background;
+          for (const label of labelBoxes) {
+            expect(label, "an edge label hides the line behind it").toEqual({
+              opacity: "1",
+              fill: background,
+            });
+          }
         }
       });
     }
@@ -491,6 +508,47 @@ test.describe("without JavaScript", () => {
 
 test.describe("with JavaScript", () => {
   for (const { post, code } of rich.filter((item) => item.code.length > 0)) {
+    test(`${postPath(post.slug)} keeps the copy buttons clear of the code`, async ({
+      page,
+    }) => {
+      await page.goto(postPath(post.slug));
+      await expect(page.locator(".post-body .copy-button")).toHaveCount(
+        code.length,
+      );
+      const blocks = await page
+        .locator(".post-body .code-block")
+        .evaluateAll((elements) =>
+          elements.map((block) => {
+            const pre = block.querySelector("pre");
+            const button = block
+              .querySelector(".copy-button")
+              ?.getBoundingClientRect();
+            const style = pre ? getComputedStyle(pre) : undefined;
+            const overlaps = [...block.querySelectorAll(".line")].some(
+              (line) => {
+                const box = line.getBoundingClientRect();
+                return (
+                  button !== undefined &&
+                  box.width > 0 &&
+                  box.left < button.right &&
+                  box.right > button.left &&
+                  box.top < button.bottom &&
+                  box.bottom > button.top
+                );
+              },
+            );
+            return {
+              overlaps,
+              sides: [style?.paddingLeft, style?.paddingRight],
+            };
+          }),
+        );
+      for (const { overlaps, sides } of blocks) {
+        expect(overlaps, "the button covers a line of code").toBe(false);
+        expect(sides[1], "space reserved beside every line").toBe(sides[0]);
+      }
+    });
+
     test(`${postPath(post.slug)} copies each code block`, async ({
       page,
       context,

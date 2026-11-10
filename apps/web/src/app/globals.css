@@ -153,8 +153,8 @@
     cursor: pointer;
   }
 
-  .post-body .code-block:has(.copy-button) pre {
-    padding-right: 7rem;
+  .post-body .code-block pre {
+    padding-top: 2.75rem;
   }
 
   @media (prefers-color-scheme: dark) {
