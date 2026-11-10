@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { extractText, getDocumentProxy } from "unpdf";
 import { describe, expect, it } from "vitest";
+import { experienceLinks } from "@/portfolio/experience";
 import { parseResumeTex } from "@/testing/resume-tex";
 import { resume } from "./claims";
 import { resumeHashPath, resumePdfPath, resumeTexPath } from "./source";
@@ -46,6 +47,7 @@ describe("the resume's claims", () => {
   it("match the resume's LaTeX source word for word", async () => {
     const tex = parseResumeTex(await readFile(resumeTexPath, "utf8"));
     expect(tex).toEqual({
+      jobLinks: expect.any(Array),
       name: resume.name,
       headline: resume.headline,
       emails: [resume.email],
@@ -55,6 +57,28 @@ describe("the resume's claims", () => {
         { title: "Work Experience", entries: resume.experience },
       ],
     });
+  });
+
+  it("link each job where the resume links it, and nowhere else", async () => {
+    const { jobLinks } = parseResumeTex(await readFile(resumeTexPath, "utf8"));
+    const mismatches = resume.experience.flatMap(({ title, organisation }) => {
+      const site = experienceLinks[organisation];
+      const urls =
+        jobLinks.find(
+          (job) => job.title === title && job.organisation === organisation,
+        )?.urls ?? [];
+      if (site === undefined) {
+        return urls.length > 0
+          ? [`${organisation}: the resume links ${urls.join(", ")}, the site nothing`]
+          : [];
+      }
+      return urls.includes(site)
+        ? []
+        : [
+            `${organisation}: the site links ${site}, the resume ${urls.join(", ") || "nothing"}`,
+          ];
+    });
+    expect(mismatches).toEqual([]);
   });
 
   it("are all in the committed PDF, in order", async () => {

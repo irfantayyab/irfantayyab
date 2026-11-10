@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { experienceLinks } from "@/portfolio/experience";
 import { portfolioRepoUrl } from "@/portfolio/links";
 import { ProjectBlock } from "@/portfolio/project-block";
 import { projects } from "@/portfolio/projects";
 import { resume } from "@/resume/claims";
+import { loadWriting } from "@/writing/load";
+import { PostList } from "@/writing/post-list";
 
 const contactLinks = [
   { label: "GitHub", url: resume.links.github.url },
@@ -11,7 +14,11 @@ const contactLinks = [
   { label: "Resume (PDF)", url: "/resume.pdf" },
 ];
 
-export default function HomePage() {
+const latestCount = 5;
+
+export default async function HomePage() {
+  const { posts } = await loadWriting();
+  const latest = posts.slice(0, latestCount);
   return (
     <>
       <h1 className="text-4xl/tight font-semibold tracking-tight">
@@ -73,6 +80,18 @@ export default function HomePage() {
             );
           })}
         </ul>
+      </section>
+
+      <section aria-labelledby="writing" className="mt-16">
+        <h2 id="writing" className="text-2xl font-semibold tracking-tight">
+          Writing
+        </h2>
+        <div className="mt-6">
+          <PostList posts={latest} descriptions={false} />
+        </div>
+        <p className="mt-6 font-sans text-base">
+          <Link href="/writing">All writing</Link>
+        </p>
       </section>
 
       <section aria-labelledby="contact" className="mt-16">

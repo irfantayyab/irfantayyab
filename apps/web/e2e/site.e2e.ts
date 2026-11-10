@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
@@ -6,6 +6,10 @@ import { expect, test } from "@playwright/test";
 import { pageColors } from "../src/app/theme";
 import { resume } from "../src/resume/claims";
 import { resumePdfPath } from "../src/resume/source";
+import { formatDate } from "../src/writing/date";
+import { loadWritingFrom } from "../src/writing/load";
+import { writingDir } from "../src/writing/source";
+import { postPath, tagPath } from "../src/writing/writing";
 
 const outDir = fileURLToPath(new URL("../out/", import.meta.url));
 
@@ -17,6 +21,16 @@ const pages = readdirSync(outDir, { recursive: true, encoding: "utf8" })
   .map((file) =>
     file === "index.html" ? "/" : `/${file.replace(/\.html$/, "")}`,
   );
+
+const writing = await loadWritingFrom(writingDir);
+
+const redirects = readFileSync(`${outDir}_redirects`, "utf8")
+  .split("\n")
+  .filter(Boolean)
+  .map((line) => {
+    const [from = "", to = "", status = ""] = line.split(" ");
+    return { from, to, status };
+  });
 
 function escape(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -126,6 +140,7 @@ test.describe("without JavaScript", () => {
     await expect(page.getByRole("heading", { level: 2 })).toHaveText([
       "Projects",
       "Experience",
+      "Writing",
       "Contact",
     ]);
     const projects = page.locator("#projects ~ div > article");
@@ -181,6 +196,111 @@ test.describe("without JavaScript", () => {
     }
   });
 
+  test("the nav leads home and to the writing, marking where you are", async ({
+    page,
+  }) => {
+    for (const [path, current] of [
+      ["/", "Home"],
+      ["/writing", "Writing"],
+      ...writing.posts
+        .slice(0, 1)
+        .map(({ slug }) => [postPath(slug), "Writing"]),
+    ] as const) {
+      await page.goto(path);
+      const nav = page.getByRole("navigation", { name: "Site" });
+      await expect(nav.getByRole("link")).toHaveText(["Home", "Writing"]);
+      await expect(nav.getByRole("link", { name: "Home" })).toHaveAttribute(
+        "href",
+        "/",
+      );
+      await expect(nav.getByRole("link", { name: "Writing" })).toHaveAttribute(
+        "href",
+        "/writing",
+      );
+      await expect(nav.locator("[aria-current=page]")).toHaveText(current);
+    }
+  });
+
+  test("the home page lists the latest writing", async ({ page }) => {
+    await page.goto("/");
+    const latest = writing.posts.slice(0, 5);
+    const section = page.locator("section", {
+      has: page.getByRole("heading", { level: 2, name: "Writing" }),
+    });
+    await expect(section.locator("li a")).toHaveText(
+      latest.map(({ title }) => title),
+    );
+    await expect(
+      section.getByRole("link", { name: "All writing" }),
+    ).toHaveAttribute("href", "/writing");
+  });
+
+  test("/writing lists every post, newest first", async ({ page }) => {
+    await page.goto("/writing");
+    const items = page.locator("main li");
+    await expect(items).toHaveCount(writing.posts.length);
+    for (const [i, post] of writing.posts.entries()) {
+      const item = items.nth(i);
+      await expect(item.getByRole("link")).toHaveText(post.title);
+      await expect(item.getByRole("link")).toHaveAttribute(
+        "href",
+        postPath(post.slug),
+      );
+      await expect(item.locator("time")).toHaveText(formatDate(post.date));
+      await expect(item).toContainText(post.description);
+    }
+  });
+
+  for (const post of writing.posts) {
+    test(`${postPath(post.slug)} shows its post`, async ({ page }) => {
+      await page.goto(postPath(post.slug));
+      await expect(page).toHaveTitle(`${post.title} · ${resume.name}`);
+      await expect(
+        page.getByRole("heading", { level: 1, name: post.title }),
+      ).toBeVisible();
+      await expect(page.locator("meta[name=description]")).toHaveAttribute(
+        "content",
+        post.description,
+      );
+      await expect(page.locator("article time").first()).toHaveAttribute(
+        "datetime",
+        post.date,
+      );
+      await expect(
+        page.getByRole("list", { name: "Tags" }).getByRole("link"),
+      ).toHaveText(
+        post.tags.map(
+          (slug) => writing.tags.find((tag) => tag.slug === slug)?.label ?? "",
+        ),
+      );
+      for (const slug of post.tags) {
+        await expect(page.locator(`a[href="${tagPath(slug)}"]`)).toHaveCount(1);
+      }
+    });
+  }
+
+  for (const tag of writing.tags) {
+    test(`${tagPath(tag.slug)} lists its posts`, async ({ page }) => {
+      await page.goto(tagPath(tag.slug));
+      await expect(
+        page.getByRole("heading", {
+          level: 1,
+          name: `Writing on ${tag.label}`,
+        }),
+      ).toBeVisible();
+      await expect(page.locator("main li a")).toHaveText(
+        writing.posts
+          .filter((post) => post.tags.includes(tag.slug))
+          .map(({ title }) => title),
+      );
+    });
+  }
+
+  test("an unknown post answers 404", async ({ page }) => {
+    const response = await page.goto("/writing/no-such-post");
+    expect(response?.status()).toBe(404);
+  });
+
   for (const { colorScheme, background } of themes) {
     test(`the ${colorScheme} theme follows the device`, async ({ page }) => {
       await page.emulateMedia({ colorScheme });
@@ -193,11 +313,21 @@ test.describe("without JavaScript", () => {
   }
 });
 
-test("/home redirects to /", async ({ request }) => {
-  const response = await request.get("/home", { maxRedirects: 0 });
-  expect(response.status()).toBe(301);
-  expect(response.headers()["location"]).toBe("/");
+test("_redirects holds /home and every redirect of the writing", () => {
+  expect(redirects).toEqual([
+    { from: "/home", to: "/", status: "301" },
+    ...writing.redirects.map(({ from, to }) => ({ from, to, status: "301" })),
+  ]);
 });
+
+for (const { from, to } of redirects) {
+  test(`${from} redirects to ${to}, which answers`, async ({ request }) => {
+    const response = await request.get(from, { maxRedirects: 0 });
+    expect(response.status()).toBe(301);
+    expect(response.headers()["location"]).toBe(to);
+    expect((await request.get(to)).status()).toBe(200);
+  });
+}
 
 test("the resume is the committed PDF, to open or save", async ({
   request,

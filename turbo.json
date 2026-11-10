@@ -38,7 +38,8 @@
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.tex",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf",
-        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.sha256"
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.sha256",
+        "$TURBO_ROOT$/content/writing/**"
       ],
       "outputs": []
     },
@@ -47,7 +48,8 @@
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.tex",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf",
-        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.sha256"
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.sha256",
+        "$TURBO_ROOT$/content/writing/**"
       ],
       "outputs": []
     },
@@ -56,7 +58,11 @@
       "outputs": []
     },
     "build": {
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf",
+        "$TURBO_ROOT$/content/writing/**"
+      ],
       "dependsOn": ["^build", "typecheck"],
       "env": ["NEXT_PUBLIC_CF_ANALYTICS_TOKEN"],
       "outputs": ["out/**"]

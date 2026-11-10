@@ -88,7 +88,36 @@ describe("parseResumeTex", () => {
           ],
         },
       ],
+      jobLinks: [
+        { title: "BSc", organisation: "Some University", urls: [] },
+        { title: "Engineer", organisation: "R&D Ltd", urls: [] },
+        { title: "Intern", organisation: "Acme", urls: [] },
+      ],
     });
+  });
+
+  it("reads each job's own links, up to the next job or section", () => {
+    const tex = resumeWith(String.raw`
+\bluelink{https://github.com/ada}{github.com/ada}\par
+\section*{Work Experience}
+\job{Engineer}{Acme}{2024}
+\begin{itemize}
+  \item Merged (\href{https://github.com/acme/pull/1}{PR}).
+  % \item Old (\href{https://gone.example.com}{gone}).
+  \item Shipped \project{https://acme.test/a\_b}{a demo}.
+\end{itemize}
+\job{Intern}{Initech}{2023}
+\section*{Projects}
+\project{https://example.com/side}{Side project}
+`);
+    expect(parseResumeTex(tex).jobLinks).toEqual([
+      {
+        title: "Engineer",
+        organisation: "Acme",
+        urls: ["https://github.com/acme/pull/1", "https://acme.test/a_b"],
+      },
+      { title: "Intern", organisation: "Initech", urls: [] },
+    ]);
   });
 
   it("ignores jobs in comments and in the preamble", () => {
