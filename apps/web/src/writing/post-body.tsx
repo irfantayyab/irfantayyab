@@ -1,8 +1,7 @@
 import type { Root } from "hast";
 import { type Components, toJsxRuntime } from "hast-util-to-jsx-runtime";
-import type { ComponentProps } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
-import { CopyButton } from "./copy-button";
+import { CodeBlock } from "./code-block";
 import { diagramTag } from "./render";
 
 function Diagram({ light, dark }: { light?: string; dark?: string }) {
@@ -16,15 +15,6 @@ function Diagram({ light, dark }: { light?: string; dark?: string }) {
         className="diagram-dark"
         dangerouslySetInnerHTML={{ __html: dark ?? "" }}
       />
-    </div>
-  );
-}
-
-function CodeBlock({ style, ...props }: ComponentProps<"pre">) {
-  return (
-    <div className="code-block" style={style}>
-      <pre style={style} {...props} />
-      <CopyButton />
     </div>
   );
 }

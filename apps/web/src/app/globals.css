@@ -139,10 +139,15 @@
     color: var(--shiki-light);
   }
 
-  .post-body .copy-button {
+  .post-body .code-actions {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .post-body .code-actions button {
     border: 1px solid currentColor;
     border-radius: 0.25rem;
     background-color: inherit;
@@ -153,8 +158,25 @@
     cursor: pointer;
   }
 
+  .post-body .code-actions button[aria-pressed="true"] {
+    background-color: var(--shiki-light);
+    color: var(--shiki-light-bg);
+  }
+
   .post-body .code-block pre {
     padding-top: 2.75rem;
+  }
+
+  .post-body .code-block[data-wrapped] pre {
+    overflow-x: visible;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .post-body .code-block[data-wrapped] .line {
+    display: inline-block;
+    padding-left: 2ch;
+    text-indent: -2ch;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -170,6 +192,11 @@
     .post-body pre.shiki,
     .post-body pre.shiki span {
       color: var(--shiki-dark);
+    }
+
+    .post-body .code-actions button[aria-pressed="true"] {
+      background-color: var(--shiki-dark);
+      color: var(--shiki-dark-bg);
     }
   }
 

@@ -395,7 +395,7 @@ test.describe("without JavaScript", () => {
         );
       }
       await expect(body.locator("pre.shiki")).toHaveText(code);
-      await expect(body.locator(".copy-button")).toHaveCount(0);
+      await expect(body.locator(".code-actions")).toHaveCount(0);
       const links = body.locator(":is(h2, h3, h4, h5, h6) > a.heading-link");
       await expect(links).toHaveCount(headings);
       for (const link of await links.all()) {
@@ -508,7 +508,7 @@ test.describe("without JavaScript", () => {
 
 test.describe("with JavaScript", () => {
   for (const { post, code } of rich.filter((item) => item.code.length > 0)) {
-    test(`${postPath(post.slug)} keeps the copy buttons clear of the code`, async ({
+    test(`${postPath(post.slug)} keeps the wrap and copy buttons clear of the code`, async ({
       page,
     }) => {
       await page.goto(postPath(post.slug));
@@ -521,7 +521,7 @@ test.describe("with JavaScript", () => {
           elements.map((block) => {
             const pre = block.querySelector("pre");
             const button = block
-              .querySelector(".copy-button")
+              .querySelector(".code-actions")
               ?.getBoundingClientRect();
             const style = pre ? getComputedStyle(pre) : undefined;
             const overlaps = [...block.querySelectorAll(".line")].some(
@@ -603,6 +603,33 @@ test.describe("with JavaScript", () => {
       await page.waitForTimeout(1200);
       await expect(button).toHaveText("Copied");
       await expect(button).toHaveText("Copy", { timeout: 5000 });
+    });
+
+    test(`${postPath(post.slug)} wraps a code block's lines on a phone, and unwraps them`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.goto(postPath(post.slug));
+      const blocks = page.locator(".post-body .code-block");
+      await expect(blocks.locator(".wrap-button")).toHaveCount(code.length);
+      for (const [i, text] of code.entries()) {
+        const block = blocks.nth(i);
+        const pre = block.locator("pre");
+        const wrap = block.locator(".wrap-button");
+        const overflows = () =>
+          pre.evaluate((element) => element.scrollWidth > element.clientWidth);
+        const before = await overflows();
+        await expect(wrap).toHaveAttribute("aria-pressed", "false");
+        await wrap.click();
+        await expect(wrap).toHaveAttribute("aria-pressed", "true");
+        expect(await overflows(), "a wrapped block scrolls sideways").toBe(
+          false,
+        );
+        expect((await pre.textContent())?.replace(/\n$/, "")).toBe(text);
+        await wrap.click();
+        await expect(wrap).toHaveAttribute("aria-pressed", "false");
+        expect(await overflows()).toBe(before);
+      }
     });
 
     test(`${postPath(post.slug)} says when a copy fails`, async ({ page }) => {
