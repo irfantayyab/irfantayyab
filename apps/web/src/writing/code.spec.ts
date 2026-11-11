@@ -1,7 +1,14 @@
 import type { Element, ElementContent } from "hast";
 import { describe, expect, it } from "vitest";
 import { blend, contrastRatio } from "@/testing/contrast";
-import { codeBackgrounds, codeStyles, minContrast, renderCode } from "./code";
+import {
+  codeBackgrounds,
+  codeStyles,
+  hangingIndent,
+  minContrast,
+  renderCode,
+  tabWidth,
+} from "./code";
 
 const samples: Record<string, string> = {
   ts: `// A comment\nimport { a } from "b";\nexport class C<T> extends D {\n  #x = 1n;\n  m(y: T): string | null {\n    return \`\${this.#x}\` ?? /re+/g.source;\n  }\n}`,
@@ -103,21 +110,63 @@ describe("renderCode", () => {
     });
   }
 
-  it("indents each line's continuation 4 characters deeper than the line", async () => {
+  function indents(nodes: readonly ElementContent[]) {
+    return elementsIn(nodes)
+      .filter((element) => classesOf(element).includes("ec-line"))
+      .map((line) => Number(/--ecIndent:(\d+)ch/.exec(styleOf(line))?.[1]));
+  }
+
+  it("indents each line's continuation deeper than the line, by the hanging indent", async () => {
     const nodes = await renderCode("if (a) {\n  b();\n    c();\n}", "ts", "");
-    expect(
-      elementsIn(nodes)
-        .filter((element) => classesOf(element).includes("ec-line"))
-        .map((line) => /--ecIndent:(\d+)ch/.exec(styleOf(line))?.[1]),
-    ).toEqual(["4", "6", "8", "4"]);
+    expect(indents(nodes)).toEqual(
+      [0, 2, 4, 0].map((indent) => indent + hangingIndent),
+    );
   });
 
-  it("makes each block reachable from the keyboard, since it may scroll", async () => {
+  it("counts a tab as wide as the browser draws it", async () => {
+    const nodes = await renderCode("a:\n\tb\n\t\tc\n \td", "makefile", "");
+    expect(indents(nodes)).toEqual(
+      [0, tabWidth, 2 * tabWidth, tabWidth + 1].map(
+        (indent) => indent + hangingIndent,
+      ),
+    );
+  });
+
+  it("makes each block a named group reachable from the keyboard, since it may scroll", async () => {
     const pre = elementsIn(await renderCode("x", "text", "")).find(
       (element) => element.tagName === "pre",
     );
-    expect(pre?.properties.tabIndex).toBe(0);
+    expect(pre?.properties).toMatchObject({
+      tabIndex: 0,
+      role: "group",
+      ariaLabel: "Code",
+    });
+    const titled = elementsIn(await renderCode("x", "js", 'title="a.js"')).find(
+      (element) => element.tagName === "pre",
+    );
+    expect(titled?.properties.ariaLabel).toBe("Code: a.js");
   });
+
+  it.each([
+    ["// src/app/page.tsx\nexport default 1;", "tsx"],
+    ["# deploy.sh\necho hi", "bash"],
+  ])(
+    "keeps a first-line file name in the code, as written: %j",
+    async (code, lang) => {
+      const nodes = elementsIn(await renderCode(code, lang, ""));
+      expect(
+        nodes.filter((element) => classesOf(element).includes("ec-line")),
+      ).toHaveLength(2);
+      const title = nodes.find((element) =>
+        classesOf(element).includes("title"),
+      );
+      expect(
+        (title?.children ?? [])
+          .map((child) => (child.type === "text" ? child.value : ""))
+          .join(""),
+      ).toBe("");
+    },
+  );
 
   it("gives a block its title, and a shell block a terminal frame", async () => {
     const titled = elementsIn(

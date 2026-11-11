@@ -197,6 +197,27 @@ describe("parseMarkdown", () => {
       },
     );
 
+    it("takes a fence's options and refuses a mistaken one, naming its line", () => {
+      expect(
+        parseMarkdown('Text.\n\n```js title="a.js" {2}\na();\nb();\n```\n')
+          .problems,
+      ).toEqual([]);
+      expect(
+        parseMarkdown('Text.\n\n```js titel="a.js"\na();\n```\n').problems,
+      ).toEqual(['line 3: "titel=" is no code block option']);
+      expect(
+        parseMarkdown("Text.\n\n```js {3}\na();\nb();\n```\n").problems,
+      ).toEqual(['line 3: "{3}" points past the block\'s last line, line 2']);
+    });
+
+    it("refuses options on a diagram", () => {
+      expect(
+        parseMarkdown(
+          '```mermaid title="x"\naccTitle: A\naccDescr: B\ngraph TD\n```\n',
+        ).problems,
+      ).toEqual(["line 1: a diagram takes no options after mermaid"]);
+    });
+
     it("takes a fence without a language", () => {
       expect(parseMarkdown("```\nplain\n```\n").problems).toEqual([]);
     });

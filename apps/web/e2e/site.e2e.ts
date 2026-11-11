@@ -100,6 +100,13 @@ const rich = writing.posts.map((post) => {
       .filter(({ diagram }) => !diagram)
       .map(({ title }) => title ?? ""),
     diagrams: blocks.filter(({ diagram }) => diagram).length,
+    edgeLabels: blocks
+      .filter(({ diagram }) => diagram)
+      .reduce(
+        (count, { text }) =>
+          count + (text.match(/-->\s*\|[^|]+\|/g) ?? []).length,
+        0,
+      ),
     headings: findAll(
       post.body,
       (element) =>
@@ -430,6 +437,12 @@ test.describe("without JavaScript", () => {
         page.locator('link[rel=stylesheet][href="/code.css"]'),
       ).toHaveCount(1);
       await expect(body.locator(".code-actions button")).toHaveCount(0);
+      for (const line of await body.locator(".ec-line .code").all()) {
+        await expect(line, "code starts unwrapped").toHaveCSS(
+          "white-space",
+          "pre",
+        );
+      }
       const links = body.locator(":is(h2, h3, h4, h5, h6) > a.heading-link");
       await expect(links).toHaveCount(headings);
       for (const link of await links.all()) {
@@ -474,6 +487,9 @@ test.describe("without JavaScript", () => {
         await page.goto(postPath(post.slug));
         const visible = page.locator(".post-body .diagram svg:visible");
         await expect(visible).toHaveCount(diagrams ?? 0);
+        const edgeLabels =
+          rich.find((item) => item.post === post)?.edgeLabels ?? 0;
+        let labelBoxCount = 0;
         for (const svg of await visible.all()) {
           await expect(svg).toHaveAttribute(
             "id",
@@ -494,6 +510,7 @@ test.describe("without JavaScript", () => {
           const background = themes.find(
             (theme) => theme.colorScheme === colorScheme,
           )?.background;
+          labelBoxCount += labelBoxes.length;
           for (const label of labelBoxes) {
             expect(label, "an edge label hides the line behind it").toEqual({
               opacity: "1",
@@ -501,6 +518,10 @@ test.describe("without JavaScript", () => {
             });
           }
         }
+        expect(
+          labelBoxCount,
+          "a box behind every labelled edge",
+        ).toBeGreaterThanOrEqual(edgeLabels);
       });
     }
   }
@@ -635,6 +656,7 @@ test.describe("with JavaScript", () => {
       await page.goto(postPath(post.slug));
       const blocks = page.locator(".post-body .code-block");
       await expect(blocks.locator(".wrap-button")).toHaveCount(code.length);
+      const scrolledBefore: boolean[] = [];
       for (const [i, text] of code.entries()) {
         const block = blocks.nth(i);
         const pre = block.locator("pre");
@@ -642,6 +664,7 @@ test.describe("with JavaScript", () => {
         const overflows = () =>
           pre.evaluate((element) => element.scrollWidth > element.clientWidth);
         const before = await overflows();
+        scrolledBefore.push(before);
         await expect(wrap).toHaveAttribute("aria-pressed", "false");
         await wrap.click();
         await expect(wrap).toHaveAttribute("aria-pressed", "true");
@@ -689,17 +712,71 @@ test.describe("with JavaScript", () => {
             return [];
           }),
         );
+        if (before) {
+          expect(
+            wrappedLines.length,
+            "a block too wide for the phone wraps some line",
+          ).toBeGreaterThan(0);
+        }
         for (const { start, continuation } of wrappedLines) {
           expect(
             continuation,
-            "a continuation starts no deeper than its own line",
+            "a continuation starts deeper than its own line",
           ).toBeGreaterThan(start + 1);
         }
         await wrap.click();
         await expect(wrap).toHaveAttribute("aria-pressed", "false");
         expect(await overflows()).toBe(before);
       }
+      expect(
+        scrolledBefore.some(Boolean),
+        "some block scrolls sideways on a phone before Wrap, as the default",
+      ).toBe(true);
     });
+
+    test(`${postPath(post.slug)} is reached from /writing with its code styled and its buttons working`, async ({
+      page,
+    }) => {
+      await page.goto("/writing");
+      await page.evaluate(() => {
+        (window as { navigated?: string }).navigated = "same document";
+      });
+      await page.getByRole("link", { name: post.title }).click();
+      await expect(page).toHaveURL(postPath(post.slug));
+      expect(
+        await page.evaluate(() => (window as { navigated?: string }).navigated),
+        "the post opened without a full page load",
+      ).toBe("same document");
+      await expect(
+        page.locator('head link[rel=stylesheet][href="/code.css"]'),
+      ).toHaveCount(1);
+      await expect(page.locator(".post-body .wrap-button")).toHaveCount(
+        code.length,
+      );
+      const frame = page.locator(".post-body .expressive-code pre").first();
+      await expect(frame).toHaveCSS("tab-size", "4");
+      await expect(frame).not.toHaveCSS("border-bottom-width", "0px");
+    });
+
+    for (const { colorScheme } of themes) {
+      test(`${postPath(post.slug)} outlines a focused code block in ink, in the ${colorScheme} theme`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme });
+        await page.goto(postPath(post.slug));
+        const pre = page.locator(".post-body .expressive-code pre").first();
+        await expect(pre).toHaveAttribute("role", "group");
+        await expect(pre).toHaveAccessibleName(/^Code/);
+        await page.locator(".post-body .copy-button").first().focus();
+        await page.keyboard.press("Tab");
+        await expect(pre).toBeFocused();
+        const ink = await page.evaluate(
+          () => getComputedStyle(document.body).color,
+        );
+        await expect(pre).toHaveCSS("outline-color", ink);
+        await expect(pre).toHaveCSS("outline-style", "solid");
+      });
+    }
 
     test(`${postPath(post.slug)} says when a copy fails`, async ({ page }) => {
       await page.addInitScript(() => {

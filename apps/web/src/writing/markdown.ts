@@ -9,6 +9,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { matter } from "vfile-matter";
 import { isPageId } from "@/app/page-ids";
+import { checkFenceMeta } from "./fence-meta";
 import { imageFile, plainLanguages } from "./schema";
 
 type MarkdownNode = {
@@ -16,6 +17,7 @@ type MarkdownNode = {
   depth?: number;
   value?: string;
   lang?: string | null;
+  meta?: string | null;
   url?: string;
   alt?: string | null;
   position?: { start: { line: number } };
@@ -112,6 +114,18 @@ function checkFence(node: MarkdownNode, context: Context) {
       line,
       `code in "${lang}" cannot be highlighted; name a language Shiki knows, or text`,
     );
+  }
+  const meta = node.meta?.trim() ?? "";
+  if (meta === "") {
+    return;
+  }
+  if (lang === "mermaid") {
+    report(context.problems, line, "a diagram takes no options after mermaid");
+    return;
+  }
+  const lines = (node.value ?? "").split("\n").length;
+  for (const problem of checkFenceMeta(meta, lines, isCodeLanguage)) {
+    report(context.problems, line, problem);
   }
 }
 

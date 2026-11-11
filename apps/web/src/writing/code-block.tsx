@@ -32,9 +32,11 @@ function useHydrated() {
 }
 
 function shownCode(block: HTMLElement) {
-  return [...block.querySelectorAll(".ec-line .code")]
-    .map((line) => line.textContent ?? "")
-    .join("\n");
+  const lines = [...block.querySelectorAll(".ec-line .code")];
+  if (lines.length === 0) {
+    throw new Error("No lines of code in the block");
+  }
+  return lines.map((line) => line.textContent ?? "").join("\n");
 }
 
 function CopyButton({ block }: { block: RefObject<HTMLDivElement | null> }) {

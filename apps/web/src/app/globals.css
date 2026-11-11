@@ -245,3 +245,12 @@
   .code {
   white-space: pre;
 }
+
+.post-body .expressive-code pre {
+  tab-size: 4;
+}
+
+.post-body .expressive-code pre:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
