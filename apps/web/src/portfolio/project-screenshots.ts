@@ -17,8 +17,8 @@ export const projectScreenshots: Readonly<Record<string, Screenshot>> = {
     image: plumb,
     alt: "The fix's commit on GitHub: its message, and the diff of the selection tool's docs.",
   },
-  "This site": {
+  "Portfolio site": {
     image: site,
-    alt: "A post on this site, its title and text in Newsreader on a plain white page.",
+    alt: "A post on the portfolio site, its title and text in Newsreader on a plain white page.",
   },
 };

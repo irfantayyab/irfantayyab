@@ -46,12 +46,12 @@ export const projects: readonly Project[] = [
     links: [{ label: "The fix", url: plumbFixUrl }],
   },
   {
-    name: "This site",
+    name: "Portfolio site",
     summary:
       "A portfolio and a blog, served as static files, with its claims held to the resume by a test.",
     problem:
       "A portfolio that repeats the resume adds nothing, and one that drifts from it costs trust.",
-    part: "A Next.js static export on Cloudflare, deployed from GitHub Actions only once every check passes, with a preview for each pull request. A test holds every job title, date and contact link on this page to the resume’s LaTeX source and its PDF, and a hash ties the PDF to the source it was built from. Every page is loaded in a real browser without JavaScript and scanned by axe in both themes.",
+    part: "A Next.js static export on Cloudflare, deployed from GitHub Actions only once every check passes, with a preview for each pull request. A test holds every job title, date and contact link on the site to the resume’s LaTeX source and its PDF, and a hash ties the PDF to the source it was built from. Every page is loaded in a real browser without JavaScript and scanned by axe in both themes.",
     stack: [
       "Next.js",
       "Tailwind CSS",
