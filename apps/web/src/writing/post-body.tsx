@@ -4,9 +4,17 @@ import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { CodeBlock } from "./code-block";
 import { codeTag, diagramTag } from "./render";
 
-function Diagram({ light, dark }: { light?: string; dark?: string }) {
+function Diagram({
+  light,
+  dark,
+  id,
+}: {
+  light?: string;
+  dark?: string;
+  id?: string;
+}) {
   return (
-    <div className="diagram">
+    <div className="diagram" id={id}>
       <div
         className="diagram-light"
         dangerouslySetInnerHTML={{ __html: light ?? "" }}

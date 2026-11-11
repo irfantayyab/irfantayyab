@@ -1,6 +1,9 @@
 import { toHtml } from "hast-util-to-html";
 import { describe, expect, it } from "vitest";
+import { diagramAnchor } from "@/app/page-ids";
 import { absoluteUrl } from "@/site";
+import { feedDiagramLinks } from "@/testing/feed-diagrams";
+import { nestedDiagrams, nestedDiagramTitles } from "@/testing/nested-diagrams";
 import { diagramText, feedBody, feedXml } from "./feed";
 import { parseMarkdown } from "./markdown";
 import { postPath, type Post, type Writing } from "./writing";
@@ -48,9 +51,19 @@ describe("feedBody", () => {
     );
   });
 
-  it("writes a diagram as its title, its description and a link to the post", () => {
+  it("writes a diagram as its title, its description and a link to it on the post", () => {
     expect(html(diagram)).toBe(
-      `<p><strong>Saving builds the PDF</strong></p><p>The source is built,</p><p><a href="${postUrl}">The diagram is on the site.</a></p>`,
+      `<p><strong>Saving builds the PDF</strong></p><p>The source is built,</p><p><a href="${postUrl}#diagram-1">The diagram is on the site.</a></p>`,
+    );
+  });
+
+  it("links each diagram to its own place on the post, counting nested ones in order", () => {
+    expect(parseMarkdown(nestedDiagrams).problems).toEqual([]);
+    expect(feedDiagramLinks(html(nestedDiagrams))).toEqual(
+      nestedDiagramTitles.map((title, i) => ({
+        title,
+        href: `${postUrl}#${diagramAnchor(i)}`,
+      })),
     );
   });
 

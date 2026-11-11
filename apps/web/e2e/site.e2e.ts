@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { diagramAnchor } from "../src/app/page-ids";
 import {
   cardSize,
   feedPath,
@@ -1024,9 +1025,21 @@ test.describe("sharing", () => {
         (body.match(/<blockquote>\s*<p class="callout-label"><strong>/g) ?? [])
           .length,
       ).toBe(callouts);
-      expect(body.split("The diagram is on the site.").length - 1).toBe(
-        diagrams,
-      );
+      const diagramLinks = [
+        ...body.matchAll(/href="([^"]+)">The diagram is on the site\./g),
+      ].map(([, href]) => href ?? "");
+      expect(diagramLinks).toHaveLength(diagrams);
+      for (const [n, href] of diagramLinks.entries()) {
+        const hash = `#${diagramAnchor(n)}`;
+        expect(href).toBe(
+          `${absoluteUrl(postPath(writing.posts[i]?.slug ?? ""))}${hash}`,
+        );
+        await page.goto(localPath(href));
+        await expect(page.locator(hash)).toBeInViewport();
+        await expect(
+          page.locator(hash).locator(".diagram-light svg"),
+        ).toBeVisible();
+      }
     }
   });
 

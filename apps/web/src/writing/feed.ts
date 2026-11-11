@@ -1,11 +1,17 @@
 import { MetaOptions } from "expressive-code";
 import type { Element, ElementContent, Root, RootContent } from "hast";
 import { toHtml } from "hast-util-to-html";
+import { diagramAnchor } from "@/app/page-ids";
 import { feedPath, feedTitle, writingDescription } from "@/app/page-metadata";
 import { absoluteUrl } from "@/site";
 import { postPath, type Post, type Writing } from "./writing";
 
 const diagramNote = "The diagram is on the site.";
+
+type Context = {
+  postUrl: string;
+  diagrams: number;
+};
 
 function classesOf(node: Element) {
   const className = node.properties.className;
@@ -54,7 +60,7 @@ export function diagramText(source: string) {
   };
 }
 
-function codeBlock(pre: Element, postUrl: string): Element[] | undefined {
+function codeBlock(pre: Element, context: Context): Element[] | undefined {
   const [code, ...rest] = pre.children;
   if (code?.type !== "element" || code.tagName !== "code" || rest.length > 0) {
     return undefined;
@@ -65,7 +71,11 @@ function codeBlock(pre: Element, postUrl: string): Element[] | undefined {
     return [
       boldLine(title),
       element("p", [text(description)]),
-      element("p", [element("a", [text(diagramNote)], { href: postUrl })]),
+      element("p", [
+        element("a", [text(diagramNote)], {
+          href: `${context.postUrl}#${diagramAnchor(context.diagrams++)}`,
+        }),
+      ]),
     ];
   }
   const meta = (code.data as { meta?: unknown } | undefined)?.meta;
@@ -79,19 +89,19 @@ function codeBlock(pre: Element, postUrl: string): Element[] | undefined {
   return title ? [boldLine(title), block] : [block];
 }
 
-function portable(node: RootContent, postUrl: string): RootContent[] {
+function portable(node: RootContent, context: Context): RootContent[] {
   if (node.type !== "element") {
     return [node];
   }
   const classes = classesOf(node);
   if (node.tagName === "pre") {
-    const block = codeBlock(node, postUrl);
+    const block = codeBlock(node, context);
     if (block) {
       return block;
     }
   }
   const children = node.children.flatMap(
-    (child) => portable(child, postUrl) as ElementContent[],
+    (child) => portable(child, context) as ElementContent[],
   );
   if (node.tagName === "a" && classes.includes("heading-link")) {
     return children;
@@ -106,17 +116,20 @@ function portable(node: RootContent, postUrl: string): RootContent[] {
   for (const key of ["href", "src"] as const) {
     const value = properties[key];
     if (typeof value === "string") {
-      properties[key] = new URL(value, postUrl).href;
+      properties[key] = new URL(value, context.postUrl).href;
     }
   }
   return [{ ...node, properties, children }];
 }
 
 export function feedBody(post: Post): Root {
-  const postUrl = absoluteUrl(postPath(post.slug));
+  const context: Context = {
+    postUrl: absoluteUrl(postPath(post.slug)),
+    diagrams: 0,
+  };
   return {
     type: "root",
-    children: post.body.children.flatMap((child) => portable(child, postUrl)),
+    children: post.body.children.flatMap((child) => portable(child, context)),
   };
 }
 

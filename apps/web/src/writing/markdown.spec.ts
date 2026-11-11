@@ -30,6 +30,20 @@ describe("parseMarkdown", () => {
     ]);
   });
 
+  it("refuses a second heading that slugs to a diagram's anchor", () => {
+    expect(
+      parseMarkdown("Text.\n\n## Diagram\n\n## Diagram\n").problems,
+    ).toEqual([
+      `line 5: the heading's id "diagram-1" is taken by the page itself, so rename the heading`,
+    ]);
+  });
+
+  it("leaves a heading that only starts like a diagram's anchor", () => {
+    expect(
+      parseMarkdown("Text.\n\n## Diagram 2: the build\n").problems,
+    ).toEqual([]);
+  });
+
   it("gives empty front matter when there is none", () => {
     expect(parseMarkdown("Text.\n").matter).toEqual({});
   });
