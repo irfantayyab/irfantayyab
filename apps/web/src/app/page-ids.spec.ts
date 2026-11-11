@@ -23,10 +23,15 @@ describe("isPageId", () => {
     expect(isPageId(id)).toBe(true);
   });
 
-  it.each(["main-points", "diagram-heavy-posts", "diagram-light", "diagrams"])(
-    "leaves %s to the posts",
-    (id) => {
-      expect(isPageId(id)).toBe(false);
-    },
-  );
+  it.each([
+    "main-points",
+    "diagram-heavy-posts",
+    "diagram-light",
+    "diagrams",
+    "diagram-2-the-build",
+    "diagram-10-tips",
+    "diagram-1a",
+  ])("leaves %s to the posts", (id) => {
+    expect(isPageId(id)).toBe(false);
+  });
 });

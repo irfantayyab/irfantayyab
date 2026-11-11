@@ -1,6 +1,11 @@
-import type { Element } from "hast";
+import type { Element, Root } from "hast";
+import { toHtml } from "hast-util-to-html";
 import { chromium } from "playwright";
 import { describe, expect, it } from "vitest";
+import { diagramAnchor } from "@/app/page-ids";
+import { feedDiagramLinks } from "@/testing/feed-diagrams";
+import { nestedDiagramTitles, nestedDiagrams } from "@/testing/nested-diagrams";
+import { feedBody } from "./feed";
 import { parseMarkdown } from "./markdown";
 import { diagramTag, renderBody, renderPost } from "./render";
 import type { Post } from "./writing";
@@ -46,6 +51,46 @@ describe.skipIf(!hasBrowser)("renderBody with diagrams", () => {
       expect(markup).not.toContain("<foreignObject");
     }
     expect(light).not.toEqual(dark);
+  });
+
+  it("gives each diagram the anchor the feed links it to, nested ones included", async () => {
+    const post: Post = {
+      slug: "a-post",
+      title: "A post",
+      date: "2026-11-11",
+      description: "A post.",
+      tags: ["ai"],
+      redirectFrom: [],
+      body: parseMarkdown(nestedDiagrams).body,
+      images: [],
+    };
+    const rendered = await renderBody(post.slug, post.body);
+    const drawn: { id: unknown; light: string }[] = [];
+    const walk = (node: Root | Element) => {
+      for (const child of node.children) {
+        if (child.type !== "element") {
+          continue;
+        }
+        if (child.tagName === diagramTag) {
+          drawn.push({
+            id: child.properties.id,
+            light: String(child.properties.light),
+          });
+        } else {
+          walk(child);
+        }
+      }
+    };
+    walk(rendered);
+    const links = feedDiagramLinks(toHtml(feedBody(post)));
+    expect(drawn).toHaveLength(nestedDiagramTitles.length);
+    expect(links).toHaveLength(nestedDiagramTitles.length);
+    for (const [i, { id, light }] of drawn.entries()) {
+      const link = links[i];
+      expect(id).toBe(diagramAnchor(i));
+      expect(link?.href.endsWith(`#${diagramAnchor(i)}`)).toBe(true);
+      expect(light).toContain(link?.title ?? "missing");
+    }
   });
 
   it("renders a failed post again on the next request, instead of keeping the failure", async () => {

@@ -1,6 +1,9 @@
 import { toHtml } from "hast-util-to-html";
 import { describe, expect, it } from "vitest";
+import { diagramAnchor } from "@/app/page-ids";
 import { absoluteUrl } from "@/site";
+import { feedDiagramLinks } from "@/testing/feed-diagrams";
+import { nestedDiagrams, nestedDiagramTitles } from "@/testing/nested-diagrams";
 import { diagramText, feedBody, feedXml } from "./feed";
 import { parseMarkdown } from "./markdown";
 import { postPath, type Post, type Writing } from "./writing";
@@ -55,12 +58,13 @@ describe("feedBody", () => {
   });
 
   it("links each diagram to its own place on the post, counting nested ones in order", () => {
-    const out = html(`${diagram}\n> [!NOTE]\n> Inside.\n\n${diagram}`);
-    expect(
-      [...out.matchAll(/href="([^"]+)">The diagram is on the site/g)].map(
-        ([, href]) => href,
-      ),
-    ).toEqual([`${postUrl}#diagram-1`, `${postUrl}#diagram-2`]);
+    expect(parseMarkdown(nestedDiagrams).problems).toEqual([]);
+    expect(feedDiagramLinks(html(nestedDiagrams))).toEqual(
+      nestedDiagramTitles.map((title, i) => ({
+        title,
+        href: `${postUrl}#${diagramAnchor(i)}`,
+      })),
+    );
   });
 
   it("writes a callout as a quote with its label", () => {
