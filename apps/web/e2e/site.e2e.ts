@@ -3,14 +3,26 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import {
+  cardSize,
+  feedPath,
+  siteCardPath,
+  siteDescription,
+} from "../src/app/page-metadata";
 import { pageColors } from "../src/app/theme";
 import { resume } from "../src/resume/claims";
 import { resumePdfPath } from "../src/resume/source";
+import { absoluteUrl, siteUrl } from "../src/site";
 import { formatDate } from "../src/writing/date";
 import { loadWritingFrom } from "../src/writing/load";
 import { writingDir } from "../src/writing/source";
 import { calloutLabels } from "../src/writing/markdown";
-import { postFilePath, postPath, tagPath } from "../src/writing/writing";
+import {
+  postCardPath,
+  postFilePath,
+  postPath,
+  tagPath,
+} from "../src/writing/writing";
 import type { Element, Root } from "hast";
 
 const outDir = fileURLToPath(new URL("../out/", import.meta.url));
@@ -835,6 +847,187 @@ test("the resume is the committed PDF, to open or save", async ({
   expect((await response.body()).equals(await readFile(resumePdfPath))).toBe(
     true,
   );
+});
+
+function localPath(url: string) {
+  expect(url.startsWith(`${siteUrl}/`), `${url} is on ${siteUrl}`).toBe(true);
+  return url.slice(siteUrl.length);
+}
+
+test.describe("sharing", () => {
+  for (const path of pages) {
+    const post = writing.posts.find(({ slug }) => postPath(slug) === path);
+    test(`${path} has its canonical link and card`, async ({
+      page,
+      request,
+    }) => {
+      await page.goto(path);
+      const head = page.locator("head");
+      const meta = (property: string) =>
+        head.locator(`meta[property="${property}"], meta[name="${property}"]`);
+      await expect(head.locator('link[rel="canonical"]')).toHaveCount(1);
+      await expect(head.locator('link[rel="canonical"]')).toHaveAttribute(
+        "href",
+        absoluteUrl(path),
+      );
+      await expect(
+        head.locator('link[rel="alternate"][type="application/rss+xml"]'),
+      ).toHaveAttribute("href", absoluteUrl(feedPath));
+      await expect(meta("og:url")).toHaveAttribute(
+        "content",
+        absoluteUrl(path),
+      );
+      await expect(meta("og:site_name")).toHaveAttribute(
+        "content",
+        resume.name,
+      );
+      await expect(meta("og:title")).toHaveAttribute(
+        "content",
+        post?.title ?? (path === "/" ? resume.name : /\S/),
+      );
+      await expect(meta("og:description")).toHaveAttribute(
+        "content",
+        path === "/" ? siteDescription : /\S/,
+      );
+      await expect(meta("og:type")).toHaveAttribute(
+        "content",
+        post ? "article" : "website",
+      );
+      await expect(meta("twitter:card")).toHaveAttribute(
+        "content",
+        "summary_large_image",
+      );
+      const image = absoluteUrl(post ? postCardPath(post.slug) : siteCardPath);
+      await expect(meta("og:image")).toHaveAttribute("content", image);
+      await expect(meta("og:image:width")).toHaveAttribute(
+        "content",
+        String(cardSize.width),
+      );
+      await expect(meta("og:image:height")).toHaveAttribute(
+        "content",
+        String(cardSize.height),
+      );
+      if (post) {
+        await expect(meta("article:published_time")).toHaveAttribute(
+          "content",
+          new RegExp(`^${escape(post.date)}`),
+        );
+      }
+      const response = await request.get(localPath(image));
+      expect(response.status()).toBe(200);
+      expect(response.headers()["content-type"]).toBe("image/png");
+      const png = await response.body();
+      expect(png.subarray(1, 4).toString("latin1")).toBe("PNG");
+      expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([
+        cardSize.width,
+        cardSize.height,
+      ]);
+    });
+  }
+
+  test("the 404 page has no canonical link", async ({ page }) => {
+    await page.goto("/no-such-page");
+    await expect(page.locator('head link[rel="canonical"]')).toHaveCount(0);
+  });
+
+  test("/writing links the feed", async ({ page }) => {
+    await page.goto("/writing");
+    await expect(page.getByRole("link", { name: "RSS" })).toHaveAttribute(
+      "href",
+      feedPath,
+    );
+  });
+
+  test("the feed carries every post in full, without the site's code markup", async ({
+    page,
+    request,
+  }) => {
+    const response = await request.get(feedPath);
+    expect(response.status()).toBe(200);
+    const xml = await response.text();
+    const feed = await page.evaluate((source) => {
+      const doc = new DOMParser().parseFromString(source, "application/xml");
+      const content = "http://purl.org/rss/1.0/modules/content/";
+      return {
+        error: doc.querySelector("parsererror")?.textContent ?? null,
+        items: [...doc.querySelectorAll("item")].map((item) => ({
+          title: item.querySelector("title")?.textContent,
+          link: item.querySelector("link")?.textContent,
+          guid: item.querySelector("guid")?.textContent,
+          body:
+            item.getElementsByTagNameNS(content, "encoded")[0]?.textContent ??
+            "",
+        })),
+      };
+    }, xml);
+    expect(feed.error).toBeNull();
+    expect(
+      feed.items.map(({ title, link, guid }) => ({ title, link, guid })),
+    ).toEqual(
+      writing.posts.map((post) => ({
+        title: post.title,
+        link: absoluteUrl(postPath(post.slug)),
+        guid: absoluteUrl(postPath(post.slug)),
+      })),
+    );
+    for (const [i, { code, diagrams, callouts }] of rich.entries()) {
+      const body = feed.items[i]?.body ?? "";
+      expect(body).not.toMatch(/expressive-code|post-code|post-diagram|<svg/);
+      expect(body).not.toMatch(/(?:href|src)="(?!https?:|mailto:)/);
+      expect((body.match(/<pre><code/g) ?? []).length).toBe(code.length);
+      expect((body.match(/<blockquote>/g) ?? []).length).toBeGreaterThanOrEqual(
+        callouts,
+      );
+      expect(body.split("The diagram is on the site.").length - 1).toBe(
+        diagrams,
+      );
+    }
+  });
+
+  test("the sitemap lists every page, and a post's last change", async ({
+    page,
+    request,
+  }) => {
+    const response = await request.get("/sitemap.xml");
+    expect(response.status()).toBe(200);
+    const entries = await page.evaluate(
+      (source) => {
+        const doc = new DOMParser().parseFromString(source, "application/xml");
+        return [...doc.querySelectorAll("url")].map((url) => ({
+          loc: url.querySelector("loc")?.textContent ?? "",
+          lastmod: url.querySelector("lastmod")?.textContent ?? null,
+        }));
+      },
+      await response.text(),
+    );
+    expect(entries.map(({ loc }) => loc).sort()).toEqual(
+      pages.map((path) => absoluteUrl(path)).sort(),
+    );
+    for (const { loc, lastmod } of entries) {
+      const post = writing.posts.find(
+        ({ slug }) => absoluteUrl(postPath(slug)) === loc,
+      );
+      if (post) {
+        expect(lastmod).toMatch(
+          new RegExp(`^${escape(post.updated ?? post.date)}`),
+        );
+      } else {
+        expect(lastmod).toBeNull();
+      }
+    }
+  });
+
+  test("robots.txt allows everything and names the sitemap", async ({
+    request,
+  }) => {
+    const response = await request.get("/robots.txt");
+    expect(response.status()).toBe(200);
+    const robots = await response.text();
+    expect(robots).toMatch(/^User-Agent: \*$/m);
+    expect(robots).toMatch(/^Allow: \/$/m);
+    expect(robots).not.toMatch(/^Disallow:/m);
+    expect(robots).toContain(`Sitemap: ${absoluteUrl("/sitemap.xml")}`);
+  });
 });
 
 test.describe("accessibility", () => {

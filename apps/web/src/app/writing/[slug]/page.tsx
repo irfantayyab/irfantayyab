@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { pageMetadata } from "@/app/page-metadata";
 import { loadWriting } from "@/writing/load";
 import { PostBody } from "@/writing/post-body";
 import { PostDate } from "@/writing/post-date";
 import { renderPost } from "@/writing/render";
-import { tagPath } from "@/writing/writing";
+import { postCardPath, postPath, tagPath } from "@/writing/writing";
 
 export const dynamicParams = false;
 
@@ -26,8 +27,20 @@ async function findPost(slug: string) {
 export async function generateMetadata({
   params,
 }: PageProps<"/writing/[slug]">): Promise<Metadata> {
-  const { post } = await findPost((await params).slug);
-  return { title: post.title, description: post.description };
+  const { post, tags } = await findPost((await params).slug);
+  return pageMetadata({
+    path: postPath(post.slug),
+    title: post.title,
+    description: post.description,
+    card: { path: postCardPath(post.slug), alt: post.title },
+    article: {
+      published: post.date,
+      modified: post.updated,
+      tags: post.tags.map(
+        (slug) => tags.find((tag) => tag.slug === slug)?.label ?? slug,
+      ),
+    },
+  });
 }
 
 export default async function PostPage({
