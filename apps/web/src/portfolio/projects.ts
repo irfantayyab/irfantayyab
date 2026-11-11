@@ -32,7 +32,15 @@ export const projects: readonly Project[] = [
     problem:
       "My writing lives in four formats, in folders on one PC. I wanted each file’s history, conversions between the formats, and a backup off the machine, without handing the files to a service that keeps them in its own shape.",
     part: "A TypeScript monorepo. The React app works on the real folder through the browser’s File System Access API, with an editor and live preview for Markdown and LaTeX and a revision on every save. A three-way sync to Cloudflare R2 keeps every version it replaces and finishes cleanly after a crash halfway through. A small Fastify server converts between the formats with Pandoc and LibreOffice.",
-    stack: ["TypeScript", "React", "Fastify", "Cloudflare R2", "Pandoc"],
+    stack: [
+      "TypeScript",
+      "React",
+      "CodeMirror",
+      "Fastify",
+      "Drizzle",
+      "SQLite",
+      "Cloudflare R2",
+    ],
     links: [],
   },
   {
@@ -42,7 +50,13 @@ export const projects: readonly Project[] = [
     problem:
       "Clicking a large frame froze the Figma file. The plugin serialized the selected node’s whole subtree on every selection change, whether anything had asked for it or not.",
     part: "I made selection pull-based. The plugin now reports only the node’s id on a click, and the tree is walked, and cached, only when a tool asks for it, the way it already fetched a node by id. Callers get the same result as before, and the fix merged with all 955 tests passing.",
-    stack: ["TypeScript", "MCP", "Figma plugin API"],
+    stack: [
+      "TypeScript",
+      "MCP SDK",
+      "Figma Plugin API",
+      "WebSockets",
+      "Vitest",
+    ],
     links: [{ label: "The fix", url: plumbFixUrl }],
   },
   {

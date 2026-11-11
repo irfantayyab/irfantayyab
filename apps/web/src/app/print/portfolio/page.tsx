@@ -36,7 +36,7 @@ const contacts = [
 
 function Label({ children }: { children: ReactNode }) {
   return (
-    <p className="text-sm font-semibold text-muted uppercase">{children}</p>
+    <p className="pdf-small font-semibold text-muted uppercase">{children}</p>
   );
 }
 
@@ -44,7 +44,7 @@ function Page({ number, children }: { number: number; children: ReactNode }) {
   return (
     <section className="pdf-page relative bg-page">
       {children}
-      <footer className="absolute inset-x-20 bottom-8 flex justify-between border-t border-underline pt-3 text-sm text-muted">
+      <footer className="pdf-small absolute inset-x-20 bottom-8 flex justify-between border-t border-underline pt-3 text-muted">
         <span>
           {resume.name} · {resume.headline}
         </span>
@@ -66,11 +66,11 @@ function Cover() {
       <div className="flex flex-col justify-between py-18 pr-12 pl-20">
         <Label>Portfolio</Label>
         <div>
-          <h1 className="text-[80px]/none font-semibold">{resume.name}</h1>
-          <p className="mt-5 text-3xl text-muted">{resume.headline}</p>
-          <p className="mt-10 max-w-140 text-xl/relaxed">{introLine}</p>
+          <h1 className="pdf-display">{resume.name}</h1>
+          <p className="pdf-subtitle mt-5 text-muted">{resume.headline}</p>
+          <p className="pdf-lead mt-10 max-w-140">{introLine}</p>
         </div>
-        <ul className="flex flex-wrap gap-x-7 gap-y-1 text-base">
+        <ul className="pdf-body flex flex-wrap gap-x-7 gap-y-1">
           {contacts
             .filter(({ label }) => label !== "Resume")
             .map(({ label, url }) => (
@@ -98,7 +98,7 @@ function Cover() {
 
 function Stack({ items }: { items: readonly string[] }) {
   return (
-    <ul className="flex flex-wrap gap-2 text-sm">
+    <ul className="pdf-small flex flex-wrap gap-2">
       {items.map((item) => (
         <li
           key={item}
@@ -116,21 +116,22 @@ function ProjectLinks({ project }: { project: Project }) {
     return null;
   }
   return (
-    <ul className="space-y-1 text-base">
+    <ul className="pdf-body space-y-1">
       {project.links.map(({ label, url }) => (
         <li key={url}>
           <span className="text-muted">{label}: </span>
-          <a href={url}>{shown(url)}</a>
+          <a href={url} className="whitespace-nowrap">
+            {shown(url)}
+          </a>
         </li>
       ))}
     </ul>
   );
 }
 
-function Story({ project, large }: { project: Project; large: boolean }) {
-  const size = large ? "text-xl/relaxed" : "text-[17px]/[1.6]";
+function Story({ project }: { project: Project }) {
   return (
-    <div className={`space-y-4 ${size}`}>
+    <div className="pdf-body space-y-4">
       <p>
         <strong className="font-semibold">The problem.</strong>{" "}
         {project.problem}
@@ -148,8 +149,8 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
       <Label>
         Project {index + 1} of {projects.length}
       </Label>
-      <h2 className="mt-3 text-5xl/tight font-semibold">{project.name}</h2>
-      <p className="mt-2 text-xl/snug text-muted">{project.summary}</p>
+      <h2 className="pdf-title mt-3">{project.name}</h2>
+      <p className="pdf-lead mt-2 text-muted">{project.summary}</p>
     </>
   );
   const screenshot = projectScreenshots[project.name];
@@ -160,7 +161,7 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
           <div className="flex flex-col">
             {heading}
             <div className="mt-6">
-              <Story project={project} large={false} />
+              <Story project={project} />
             </div>
           </div>
           <div className="flex flex-col gap-6 pt-9">
@@ -182,7 +183,7 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
             <ProjectLinks project={project} />
           </div>
           <div className="pdf-rule flex flex-col justify-center pl-12">
-            <Story project={project} large />
+            <Story project={project} />
           </div>
         </div>
       )}
@@ -195,27 +196,27 @@ function ExperiencePage() {
     <Page number={projects.length + 2}>
       <div className="px-20 pt-16">
         <Label>From the resume</Label>
-        <h2 className="mt-3 text-5xl/tight font-semibold">Experience</h2>
+        <h2 className="pdf-title mt-3">Experience</h2>
         <ul className="mt-10 border-t border-underline">
           {resume.experience.map(({ title, organisation, dates }) => {
             const link = experienceLinks[organisation];
             return (
               <li
                 key={`${title}, ${organisation}`}
-                className="flex items-baseline justify-between gap-8 border-b border-underline py-4 text-2xl"
+                className="pdf-lead flex items-baseline justify-between gap-8 border-b border-underline py-4"
               >
                 <span>
                   <span className="font-semibold">{title}</span>,{" "}
                   {link ? <a href={link}>{organisation}</a> : organisation}
                 </span>
-                <span className="shrink-0 text-lg text-muted">{dates}</span>
+                <span className="pdf-body shrink-0 text-muted">{dates}</span>
               </li>
             );
           })}
         </ul>
         <div className="mt-10">
           <Label>Education</Label>
-          <ul className="mt-3 text-xl">
+          <ul className="pdf-lead mt-3">
             {resume.education.map(({ title, organisation, dates }) => (
               <li key={`${title}, ${organisation}`}>
                 <span className="font-semibold">{title}</span>, {organisation}
@@ -235,14 +236,14 @@ function ContactPage() {
       <div className="grid h-full grid-cols-[2fr_3fr] gap-16 px-20 pt-16 pb-24">
         <div className="flex flex-col justify-center">
           <Label>Contact</Label>
-          <h2 className="mt-3 text-6xl/tight font-semibold">{resume.name}</h2>
-          <p className="mt-3 text-2xl text-muted">{resume.headline}</p>
+          <h2 className="pdf-title mt-3">{resume.name}</h2>
+          <p className="pdf-subtitle mt-3 text-muted">{resume.headline}</p>
         </div>
         <ul className="pdf-rule flex flex-col justify-center gap-5 pl-12">
           {contacts.map(({ label, url }) => (
             <li key={label}>
               <Label>{label}</Label>
-              <a href={url} className="text-xl whitespace-nowrap">
+              <a href={url} className="pdf-lead whitespace-nowrap">
                 {shown(url)}
               </a>
             </li>
