@@ -1,9 +1,8 @@
-const diagramLink =
-  /<p><strong>([^<]*)<\/strong><\/p><p>[^<]*<\/p><p><a href="([^"]+)">The diagram is on the site\.<\/a><\/p>/g;
+const diagramImage =
+  /<p><img src="([^"]+)" alt="([^"]*)"><\/p><p>([^<]*)<\/p>/g;
 
-export function feedDiagramLinks(html: string) {
-  return [...html.matchAll(diagramLink)].map(([, title = "", href = ""]) => ({
-    title,
-    href,
-  }));
+export function feedDiagramImages(html: string) {
+  return [...html.matchAll(diagramImage)].map(
+    ([, src = "", alt = "", description = ""]) => ({ src, alt, description }),
+  );
 }

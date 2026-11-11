@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel>
+<title>Writing by Irfan Tayyab</title>
+<link>https://portfolio.irfantayyab.workers.dev/writing</link>
+<description>Everything I have written, newest first.</description>
+<language>en</language>
+<lastBuildDate>Wed, 11 Nov 2026 00:00:00 GMT</lastBuildDate>
+<atom:link href="https://portfolio.irfantayyab.workers.dev/feed.xml" rel="self" type="application/rss+xml"/>
+<item>
+<title>Holding a portfolio to its resume</title>
+<link>https://portfolio.irfantayyab.workers.dev/writing/holding-a-portfolio-to-its-resume</link>
+<guid isPermaLink="true">https://portfolio.irfantayyab.workers.dev/writing/holding-a-portfolio-to-its-resume</guid>
+<pubDate>Wed, 11 Nov 2026 00:00:00 GMT</pubDate>
+<description>How this site keeps every job title, date and link word for word with my LaTeX resume, and why a test does it instead of me.</description>
+<category domain="https://portfolio.irfantayyab.workers.dev/writing/tags/testing">Testing</category>
+<category domain="https://portfolio.irfantayyab.workers.dev/writing/tags/nextjs">Next.js</category>
+<category domain="https://portfolio.irfantayyab.workers.dev/writing/tags/latex">LaTeX</category>
+<content:encoded>&lt;p&gt;A portfolio and a resume tell the same story twice. The resume is the one a recruiter reads first, so the moment the two disagree, the portfolio is the one that looks careless. A job title spelled differently, a date a month off, a link that moved: small things, and each one costs a little trust.&lt;/p&gt;
+&lt;p&gt;I could promise to keep them in step by hand. I would forget. So this site checks itself instead.&lt;/p&gt;
+&lt;h2 id=&quot;one-place-for-every-claim&quot;&gt;One place for every claim&lt;/h2&gt;
+&lt;p&gt;Everything the site says that the resume also says lives in one TypeScript module: my name, my headline, each job's title, organisation and dates, and the contact links. Pages read those claims from there and nowhere else. A job title is never typed into a page.&lt;/p&gt;
+&lt;p&gt;That alone does not keep anything true. It only means there is one place to check.&lt;/p&gt;
+&lt;h2 id=&quot;a-test-that-reads-the-latex&quot;&gt;A test that reads the LaTeX&lt;/h2&gt;
+&lt;p&gt;The resume is a LaTeX file in the same repository as the site. An integration test reads it, finds every job entry and the header's links, and compares them with the module, in order and both ways. A job added to the resume but not to the site fails the test, and so does one removed from only one side.&lt;/p&gt;
+&lt;figure&gt;&lt;img src=&quot;https://portfolio.irfantayyab.workers.dev/writing/holding-a-portfolio-to-its-resume/resume-headline.webp&quot; alt=&quot;The top of the resume PDF: the name Irfan Tayyab, and under it the headline Full-Stack AI Engineer&quot; width=&quot;800&quot; height=&quot;295&quot; loading=&quot;lazy&quot; decoding=&quot;async&quot;&gt;&lt;figcaption&gt;The name and headline at the top of the resume, the first claims the site repeats word for word&lt;/figcaption&gt;&lt;/figure&gt;
+&lt;p&gt;A claim on the site can only change in the same commit as the resume, or the build goes red.&lt;/p&gt;
+&lt;h2 id=&quot;the-pdf-is-checked-too&quot;&gt;The PDF is checked too&lt;/h2&gt;
+&lt;p&gt;The LaTeX source is not what people read. They read the PDF. So the same test extracts the text of the committed PDF and looks for every claim in it, each one whole and in order.&lt;/p&gt;
+&lt;p&gt;That still leaves a gap. CI cannot build the PDF, because the fonts it uses come with Microsoft Office and cannot go onto a build machine. I build it on my own PC and commit it beside its source. If I edit the source and forget to rebuild, the PDF goes stale, and if the change was a bullet rather than a claim, the text check never notices.&lt;/p&gt;
+&lt;h2 id=&quot;tying-the-pdf-to-its-source&quot;&gt;Tying the PDF to its source&lt;/h2&gt;
+&lt;p&gt;Each build in VS Code ends with a small script that writes the SHA-256 of the LaTeX source and of the PDF into a file committed with them. The test recomputes both hashes, and fails if either file changed without a build.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://portfolio.irfantayyab.workers.dev/writing/holding-a-portfolio-to-its-resume/diagram-1.png&quot; alt=&quot;From a saved resume to a checked one&quot;&gt;&lt;/p&gt;&lt;p&gt;Saving the LaTeX source builds the PDF, then a script hashes both into a file committed with them. In CI, the test recomputes both hashes and compares them with that file, failing if either changed.&lt;/p&gt;
+&lt;p&gt;The script is careful about which builds count. It writes the hashes only when the build that just ran produced the PDF: the build's log must be newer than the source, and the PDF newer than the log. A failed build, or a PDF that Git swapped in during a rebase, is never recorded against a source it was not built from.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;scripts/resume-hash.mjs&lt;/strong&gt;&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;language-js&quot;&gt;if (statSync(log).mtimeMs &amp;#x3C; statSync(tex).mtimeMs) {
+  skip(`XeLaTeX did not run on ${basename(tex)} since it was saved`);
+}
+if (statSync(pdf).mtimeMs &amp;#x3C; statSync(log).mtimeMs) {
+  skip(`${basename(pdf)} was not written by this build, which failed`);
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;blockquote&gt;&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; LaTeX Workshop runs the next step of a recipe even when the build fails, which is why the script checks the times itself instead of trusting that it ran after a good build.&lt;/p&gt;&lt;/blockquote&gt;
+&lt;p&gt;For that to work, the same source has to build the same PDF every time. The build pins the PDF's creation date, so saving without a change leaves the PDF and its hash exactly as they were.&lt;/p&gt;
+&lt;h2 id=&quot;what-it-buys&quot;&gt;What it buys&lt;/h2&gt;
+&lt;p&gt;The resume is served by the site at a URL of its own, and a browser test checks that the file served is byte for byte the one committed. Between that, the claims test and the hash, the site cannot quietly drift from the resume, and the resume cannot quietly drift from its own PDF.&lt;/p&gt;
+&lt;p&gt;None of it is clever. It is three small checks that turn &quot;I'll remember to update both&quot; into a build that will not pass until I do.&lt;/p&gt;</content:encoded>
+</item>
+</channel>
+</rss>

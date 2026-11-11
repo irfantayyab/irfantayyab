@@ -1,20 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { feedDiagramLinks } from "./feed-diagrams";
+import { feedDiagramImages } from "./feed-diagrams";
 
-describe("feedDiagramLinks", () => {
-  it("pairs each diagram's title in a feed body with its link, in order", () => {
+describe("feedDiagramImages", () => {
+  it("pairs each diagram's image in a feed body with its alt text and description, in order", () => {
     const html = [
-      '<p><strong>One</strong></p><p>First.</p><p><a href="https://a.dev/p#diagram-1">The diagram is on the site.</a></p>',
+      '<p><img src="https://a.dev/writing/p/diagram-1.png" alt="One"></p><p>First.</p>',
       "<p>Text between.</p>",
-      '<p><strong>Two</strong></p><p>Second.</p><p><a href="https://a.dev/p#diagram-2">The diagram is on the site.</a></p>',
+      '<p><img src="https://a.dev/writing/p/diagram-2.png" alt="Two"></p><p>Second.</p>',
     ].join("");
-    expect(feedDiagramLinks(html)).toEqual([
-      { title: "One", href: "https://a.dev/p#diagram-1" },
-      { title: "Two", href: "https://a.dev/p#diagram-2" },
+    expect(feedDiagramImages(html)).toEqual([
+      {
+        src: "https://a.dev/writing/p/diagram-1.png",
+        alt: "One",
+        description: "First.",
+      },
+      {
+        src: "https://a.dev/writing/p/diagram-2.png",
+        alt: "Two",
+        description: "Second.",
+      },
     ]);
   });
 
   it("finds nothing in a body without diagrams", () => {
-    expect(feedDiagramLinks("<p><strong>Bold</strong> text.</p>")).toEqual([]);
+    expect(feedDiagramImages("<p><strong>Bold</strong> text.</p>")).toEqual([]);
   });
 });

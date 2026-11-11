@@ -1,0 +1,30 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "typecheck": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/web/src/production-url.ts",
+        "$TURBO_ROOT$/apps/web/src/app/page-ids.ts"
+      ],
+      "outputs": []
+    },
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/web/src/production-url.ts",
+        "$TURBO_ROOT$/apps/web/src/app/page-ids.ts"
+      ],
+      "outputs": []
+    },
+    "test:all": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/web/src/production-url.ts",
+        "$TURBO_ROOT$/apps/web/src/app/page-ids.ts"
+      ],
+      "outputs": []
+    }
+  }
+}

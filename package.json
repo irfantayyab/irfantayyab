@@ -14,6 +14,7 @@
     "test:integration": "turbo run test:integration",
     "test:all": "turbo run test:all",
     "test:e2e": "turbo run test:e2e",
+    "crosspost": "pnpm -F @portfolio/crosspost start",
     "format": "prettier --write .",
     "format:check": "turbo run //#prettier:check",
     "prettier:check": "prettier --check .",

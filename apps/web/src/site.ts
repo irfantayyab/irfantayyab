@@ -1,4 +1,6 @@
-export const productionUrl = "https://portfolio.irfantayyab.workers.dev";
+import { productionUrl } from "./production-url.ts";
+
+export { productionUrl };
 
 export function parseSiteUrl(value: string | undefined) {
   if (value === undefined || value === "") {

@@ -4,7 +4,14 @@ import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { extractText, getDocumentProxy } from "unpdf";
-import { diagramAnchor } from "../src/app/page-ids";
+import {
+  diagramAnchor,
+  diagramImage,
+  diagramImageFile,
+  imageCopyFolder,
+  imagePngFile,
+} from "../src/app/page-ids";
+import { imageBudget } from "../src/image-budget";
 import {
   cardSize,
   feedPath,
@@ -497,6 +504,38 @@ test.describe("without JavaScript", () => {
       }
     });
 
+    test(`${postPath(post.slug)}'s diagram images are its light drawings, at twice their size`, async ({
+      page,
+      request,
+    }) => {
+      const { diagrams = 0 } = rich.find((item) => item.post === post) ?? {};
+      await page.emulateMedia({ colorScheme: "light" });
+      await page.goto(postPath(post.slug));
+      for (let i = 0; i < diagrams; i++) {
+        const box = await page
+          .locator(`#${diagramAnchor(i)} .diagram-light svg`)
+          .boundingBox();
+        const response = await request.get(
+          postFilePath(post.slug, diagramImageFile(i)),
+        );
+        expect(response.status()).toBe(200);
+        expect(response.headers()["content-type"]).toBe("image/png");
+        const png = await response.body();
+        expect(png.subarray(1, 4).toString("latin1")).toBe("PNG");
+        expect(png.byteLength).toBeLessThanOrEqual(imageBudget);
+        const { padding, scale } = diagramImage;
+        const expected = [box?.width ?? 0, box?.height ?? 0].map(
+          (side) => (side + 2 * padding) * scale,
+        );
+        for (const [j, side] of [
+          png.readUInt32BE(16),
+          png.readUInt32BE(20),
+        ].entries()) {
+          expect(Math.abs(side - (expected[j] ?? 0))).toBeLessThanOrEqual(2);
+        }
+      }
+    });
+
     for (const { colorScheme } of themes) {
       test(`${postPath(post.slug)} shows each diagram once in the ${colorScheme} theme`, async ({
         page,
@@ -545,22 +584,80 @@ test.describe("without JavaScript", () => {
     }
   }
 
-  test("the export holds each post's images and no others", () => {
+  test("the export holds each post's images, their PNG copies and its diagram images, and no others", () => {
     const shipped = readdirSync(`${outDir}writing`, {
       recursive: true,
       encoding: "utf8",
     })
       .map((file) => file.replaceAll("\\", "/"))
-      .filter((file) => file.endsWith(".webp"))
+      .filter(
+        (file) =>
+          /\.webp$|(?:^|\/)diagram-[^/]*\.png$/.test(file) ||
+          file.split("/").at(-2) === imageCopyFolder,
+      )
       .map((file) => `/writing/${file}`)
       .sort();
     expect(shipped).toEqual(
-      writing.posts
-        .flatMap((post) =>
-          post.images.map(({ file }) => postFilePath(post.slug, file)),
-        )
+      rich
+        .flatMap(({ post, diagrams }) => [
+          ...post.images.flatMap(({ file }) => [
+            postFilePath(post.slug, file),
+            postFilePath(post.slug, imagePngFile(file)),
+          ]),
+          ...Array.from({ length: diagrams }, (_, i) =>
+            postFilePath(post.slug, diagramImageFile(i)),
+          ),
+        ])
         .sort(),
     );
+  });
+
+  test("each post image's PNG copy is the same picture at the same size", async ({
+    page,
+    request,
+  }) => {
+    for (const post of writing.posts) {
+      await page.goto(postPath(post.slug));
+      for (const image of post.images) {
+        const response = await request.get(
+          postFilePath(post.slug, imagePngFile(image.file)),
+        );
+        expect(response.status()).toBe(200);
+        expect(response.headers()["content-type"]).toBe("image/png");
+        const png = await response.body();
+        expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([
+          image.width,
+          image.height,
+        ]);
+        const pixels = await page.evaluate(
+          async ({ webp, copy }) => {
+            const read = async (src: string) => {
+              const element = new Image();
+              element.src = src;
+              await element.decode();
+              const canvas = document.createElement("canvas");
+              canvas.width = element.naturalWidth;
+              canvas.height = element.naturalHeight;
+              const context = canvas.getContext("2d");
+              context?.drawImage(element, 0, 0);
+              return [
+                ...(context?.getImageData(0, 0, canvas.width, canvas.height)
+                  .data ?? []),
+              ];
+            };
+            const [a, b] = await Promise.all([read(webp), read(copy)]);
+            return (
+              a.length === b.length && a.every((value, i) => value === b[i])
+            );
+          },
+          {
+            webp: postFilePath(post.slug, image.file),
+            copy: postFilePath(post.slug, imagePngFile(image.file)),
+          },
+        );
+        expect(pixels).toBe(true);
+      }
+    }
   });
 
   test("an unknown post answers 404", async ({ page }) => {
@@ -1134,23 +1231,22 @@ test.describe("sharing", () => {
       expect(body).not.toMatch(/(?:href|src)="(?!https?:|mailto:)/);
       expect((body.match(/<pre><code/g) ?? []).length).toBe(code.length);
       expect(
-        (body.match(/<blockquote>\s*<p class="callout-label"><strong>/g) ?? [])
-          .length,
+        (body.match(/<blockquote><p><strong>[^<]+:<\/strong>/g) ?? []).length,
       ).toBe(callouts);
-      const diagramLinks = [
-        ...body.matchAll(/href="([^"]+)">The diagram is on the site\./g),
-      ].map(([, href]) => href ?? "");
-      expect(diagramLinks).toHaveLength(diagrams);
-      for (const [n, href] of diagramLinks.entries()) {
-        const hash = `#${diagramAnchor(n)}`;
-        expect(href).toBe(
-          `${absoluteUrl(postPath(writing.posts[i]?.slug ?? ""))}${hash}`,
+      const diagramImages = [
+        ...body.matchAll(/<img src="([^"]+\/diagram-\d+\.png)" alt="([^"]*)"/g),
+      ].map(([, src = "", alt = ""]) => ({ src, alt }));
+      expect(diagramImages).toHaveLength(diagrams);
+      for (const [n, { src, alt }] of diagramImages.entries()) {
+        expect(src).toBe(
+          absoluteUrl(
+            postFilePath(writing.posts[i]?.slug ?? "", diagramImageFile(n)),
+          ),
         );
-        await page.goto(localPath(href));
-        await expect(page.locator(hash)).toBeInViewport();
-        await expect(
-          page.locator(hash).locator(".diagram-light svg"),
-        ).toBeVisible();
+        expect(alt).toMatch(/\S/);
+        const image = await request.get(localPath(src));
+        expect(image.status()).toBe(200);
+        expect(image.headers()["content-type"]).toBe("image/png");
       }
     }
   });

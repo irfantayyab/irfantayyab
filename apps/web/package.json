@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node ../../scripts/copy-post-images.mjs && next dev",
-    "build": "node ../../scripts/copy-post-images.mjs && next build && node scripts/print-portfolio.ts",
+    "build": "node ../../scripts/copy-post-images.mjs && next build && node scripts/print-portfolio.ts && node scripts/export-images.ts",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run --project unit",
