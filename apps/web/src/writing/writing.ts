@@ -1,8 +1,11 @@
-import type { Root } from "hast";
+import type { Element, Root, RootContent } from "hast";
+import { imageSize } from "image-size";
 import { parse as parseYaml } from "yaml";
-import { parseMarkdown } from "./markdown";
+import { imageBudget } from "@/image-budget";
+import { type ImageReference, parseMarkdown } from "./markdown";
 import {
   frontMatterSchema,
+  imageFile,
   issues,
   postSlug,
   reservedPostSlugs,
@@ -13,8 +16,17 @@ export const postFile = "index.md";
 export const tagsFile = "tags.yaml";
 export const publishedFile = "published.txt";
 
+export type PostFile =
+  | { name: string; kind: "file"; data: Uint8Array }
+  | { name: string; kind: "folder" };
+
 export type WritingEntry =
-  | { name: string; kind: "folder"; post?: string }
+  | {
+      name: string;
+      kind: "folder";
+      post?: string;
+      files?: readonly PostFile[];
+    }
   | { name: string; kind: "file" };
 
 export type WritingFiles = {
@@ -32,6 +44,14 @@ export type Post = {
   tags: readonly string[];
   redirectFrom: readonly string[];
   body: Root;
+  images: readonly PostImage[];
+};
+
+export type PostImage = {
+  file: string;
+  data: Uint8Array;
+  width: number;
+  height: number;
 };
 
 export type Tag = {
@@ -71,9 +91,95 @@ export function tagPath(slug: string) {
   return `/writing/tags/${slug}`;
 }
 
+export function postFilePath(slug: string, file: string) {
+  return `${postPath(slug)}/${file}`;
+}
+
+function webpSize(data: Uint8Array) {
+  try {
+    const { type, width, height } = imageSize(data);
+    return type === "webp" && width > 0 && height > 0
+      ? { width, height }
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function readImages(
+  slug: string,
+  files: readonly PostFile[],
+  references: readonly ImageReference[],
+  problems: string[],
+) {
+  const referenced = new Set(references.map(({ file }) => file));
+  const images = new Map<string, PostImage>();
+  for (const file of files) {
+    const where = `${slug}/${file.name}`;
+    if (file.kind === "folder") {
+      problems.push(`${where}/: a post folder holds no folders`);
+    } else if (!imageFile.test(file.name)) {
+      problems.push(
+        `${where}: a post folder holds only its ${postFile} and WebP images named in kebab case`,
+      );
+    } else if (!referenced.has(file.name)) {
+      problems.push(`${where}: the post does not use it, so remove it`);
+    } else {
+      const size = webpSize(file.data);
+      if (!size) {
+        problems.push(`${where}: is not a WebP image`);
+      } else if (file.data.byteLength > imageBudget) {
+        problems.push(
+          `${where}: ${Math.ceil(file.data.byteLength / 1024)} KB is over the ${imageBudget / 1024} KB budget`,
+        );
+      } else {
+        images.set(file.name, { file: file.name, data: file.data, ...size });
+      }
+    }
+  }
+  const present = new Set(files.map(({ name }) => name));
+  for (const { file, line } of references) {
+    if (!present.has(file)) {
+      const problem = `image "${file}" is not in the post's folder`;
+      problems.push(
+        `${slug}/${postFile}: ${line ? `line ${line}: ${problem}` : problem}`,
+      );
+    }
+  }
+  return images;
+}
+
+function placeImages(
+  node: Root | Element,
+  slug: string,
+  images: ReadonlyMap<string, PostImage>,
+) {
+  for (const child of node.children as RootContent[]) {
+    if (child.type !== "element") {
+      continue;
+    }
+    const src = child.properties.src;
+    if (child.tagName === "img" && typeof src === "string") {
+      const image = images.get(src.replace(/^\.\//, ""));
+      if (image) {
+        child.properties = {
+          ...child.properties,
+          src: postFilePath(slug, image.file),
+          width: image.width,
+          height: image.height,
+          loading: "lazy",
+          decoding: "async",
+        };
+      }
+    }
+    placeImages(child, slug, images);
+  }
+}
+
 function readPost(
   slug: string,
   source: string,
+  files: readonly PostFile[],
   problems: string[],
 ): Post | undefined {
   const where = `${slug}/${postFile}`;
@@ -106,9 +212,17 @@ function readPost(
       `${where}: redirectFrom names "${old}", reserved for /writing/${old}/…`,
     );
   }
-  return problems.length === before
-    ? { slug, ...front.data, body: markdown.body }
-    : undefined;
+  const images = readImages(slug, files, markdown.images, problems);
+  if (problems.length !== before) {
+    return undefined;
+  }
+  placeImages(markdown.body, slug, images);
+  return {
+    slug,
+    ...front.data,
+    body: markdown.body,
+    images: [...images.values()],
+  };
 }
 
 function readTags(source: string | undefined, problems: string[]): Tag[] {
@@ -206,7 +320,12 @@ export function buildWriting(files: WritingFiles): Writing {
     } else if (entry.post === undefined) {
       problems.push(`${entry.name}/: a post folder holds its ${postFile}`);
     } else {
-      const post = readPost(entry.name, entry.post, problems);
+      const post = readPost(
+        entry.name,
+        entry.post,
+        entry.files ?? [],
+        problems,
+      );
       if (post) {
         posts.push(post);
       }

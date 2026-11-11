@@ -19,6 +19,15 @@ describe("loadWritingFrom", () => {
     ]);
   });
 
+  it("reads a post's images from its folder", async () => {
+    const writing = await loadWritingFrom(fixtureDir);
+    const post = writing.posts.find(({ slug }) => slug === "hello-world");
+    expect(
+      post?.images.map(({ file, width, height }) => ({ file, width, height })),
+    ).toEqual([{ file: "a-swatch.webp", width: 40, height: 30 }]);
+    expect(post?.images[0]?.data.byteLength).toBeGreaterThan(0);
+  });
+
   it("fails on a folder that does not exist", async () => {
     await expect(
       loadWritingFrom(path.join(fixtureDir, "no-such-folder")),

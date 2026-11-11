@@ -12,6 +12,7 @@ export default defineConfig([
     "**/out/**",
     "**/.turbo/**",
     "**/.wrangler/**",
+    "**/public/writing/**",
     "**/test-results/**",
     "**/playwright-report/**",
     "**/coverage/**",
