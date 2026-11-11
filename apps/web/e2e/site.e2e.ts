@@ -907,11 +907,31 @@ test.describe("sharing", () => {
         "content",
         String(cardSize.height),
       );
+      await expect(meta("og:image:alt")).toHaveAttribute(
+        "content",
+        post?.title ?? `${resume.name}, ${resume.headline}`,
+      );
       if (post) {
         await expect(meta("article:published_time")).toHaveAttribute(
           "content",
           new RegExp(`^${escape(post.date)}`),
         );
+        if (post.updated) {
+          await expect(meta("article:modified_time")).toHaveAttribute(
+            "content",
+            new RegExp(`^${escape(post.updated)}`),
+          );
+        } else {
+          await expect(meta("article:modified_time")).toHaveCount(0);
+        }
+        const labels = post.tags.map(
+          (slug) => writing.tags.find((tag) => tag.slug === slug)?.label,
+        );
+        const tags = meta("article:tag");
+        await expect(tags).toHaveCount(labels.length);
+        for (const [i, label] of labels.entries()) {
+          await expect(tags.nth(i)).toHaveAttribute("content", label ?? "");
+        }
       }
       const response = await request.get(localPath(image));
       expect(response.status()).toBe(200);
@@ -925,9 +945,14 @@ test.describe("sharing", () => {
     });
   }
 
-  test("the 404 page has no canonical link", async ({ page }) => {
+  test("the 404 page has no canonical link, but still links the feed", async ({
+    page,
+  }) => {
     await page.goto("/no-such-page");
     await expect(page.locator('head link[rel="canonical"]')).toHaveCount(0);
+    await expect(
+      page.locator('head link[rel="alternate"][type="application/rss+xml"]'),
+    ).toHaveAttribute("href", absoluteUrl(feedPath));
   });
 
   test("/writing links the feed", async ({ page }) => {
