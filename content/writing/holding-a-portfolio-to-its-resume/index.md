@@ -47,7 +47,7 @@ flowchart TD
 
 The script is careful about which builds count. It writes the hashes only when the build that just ran produced the PDF: the build's log must be newer than the source, and the PDF newer than the log. A failed build, or a PDF that Git swapped in during a rebase, is never recorded against a source it was not built from.
 
-```js
+```js title="scripts/resume-hash.mjs" {1,4}
 if (statSync(log).mtimeMs < statSync(tex).mtimeMs) {
   skip(`XeLaTeX did not run on ${basename(tex)} since it was saved`);
 }

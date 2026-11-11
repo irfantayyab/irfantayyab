@@ -37,6 +37,8 @@ export default async function PostPage({
   const body = await renderPost(post);
   return (
     <article>
+      {/* eslint-disable-next-line @next/next/no-css-tags */}
+      <link rel="stylesheet" href="/code.css" precedence="default" />
       <h1 className="text-4xl/tight font-semibold tracking-tight">
         {post.title}
       </h1>

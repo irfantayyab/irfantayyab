@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  type ComponentProps,
+  type ReactNode,
   type RefObject,
   useEffect,
   useRef,
@@ -31,7 +31,13 @@ function useHydrated() {
   );
 }
 
-function CopyButton({ code }: { code: RefObject<HTMLPreElement | null> }) {
+function shownCode(block: HTMLElement) {
+  return [...block.querySelectorAll(".ec-line .code")]
+    .map((line) => line.textContent ?? "")
+    .join("\n");
+}
+
+function CopyButton({ block }: { block: RefObject<HTMLDivElement | null> }) {
   const [shown, setShown] = useState<{ result: Result }>({ result: "idle" });
   const [message, setMessage] = useState("");
 
@@ -50,12 +56,10 @@ function CopyButton({ code }: { code: RefObject<HTMLPreElement | null> }) {
     setMessage("");
     let result: Result = "copied";
     try {
-      if (!code.current) {
+      if (!block.current) {
         throw new Error("No code block beside the button");
       }
-      await navigator.clipboard.writeText(
-        (code.current.textContent ?? "").replace(/\n$/, ""),
-      );
+      await navigator.clipboard.writeText(shownCode(block.current));
     } catch {
       result = "failed";
     }
@@ -75,31 +79,33 @@ function CopyButton({ code }: { code: RefObject<HTMLPreElement | null> }) {
   );
 }
 
-export function CodeBlock({ style, ...props }: ComponentProps<"pre">) {
+export function CodeBlock({ children }: { children?: ReactNode }) {
   const hydrated = useHydrated();
   const [wrapped, setWrapped] = useState(false);
-  const code = useRef<HTMLPreElement>(null);
+  const block = useRef<HTMLDivElement>(null);
 
   return (
     <div
+      ref={block}
       className="code-block"
-      style={style}
       data-wrapped={wrapped ? "" : undefined}
     >
-      <pre ref={code} style={style} {...props} />
-      {hydrated ? (
-        <div className="code-actions">
-          <button
-            type="button"
-            aria-pressed={wrapped}
-            onClick={() => setWrapped(!wrapped)}
-            className="wrap-button"
-          >
-            Wrap
-          </button>
-          <CopyButton code={code} />
-        </div>
-      ) : null}
+      <div className="code-actions">
+        {hydrated ? (
+          <>
+            <button
+              type="button"
+              aria-pressed={wrapped}
+              onClick={() => setWrapped(!wrapped)}
+              className="wrap-button"
+            >
+              Wrap
+            </button>
+            <CopyButton block={block} />
+          </>
+        ) : null}
+      </div>
+      {children}
     </div>
   );
 }

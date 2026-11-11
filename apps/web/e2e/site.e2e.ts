@@ -74,10 +74,15 @@ function codeBlocks(body: Root) {
   return findAll(body, (element) => element.tagName === "pre").map((pre) => {
     const code = findAll(pre, (element) => element.tagName === "code")[0];
     const className = code?.properties.className;
+    const meta = (code?.data as { meta?: unknown } | undefined)?.meta;
     return {
       diagram:
         Array.isArray(className) && className.includes("language-mermaid"),
       text: code ? textOf(code).replace(/\n$/, "") : "",
+      title:
+        typeof meta === "string"
+          ? /title="([^"]*)"/.exec(meta)?.[1]
+          : undefined,
     };
   });
 }
@@ -91,6 +96,9 @@ const rich = writing.posts.map((post) => {
       (element) => element.properties.role === "note",
     ).length,
     code: blocks.filter(({ diagram }) => !diagram).map(({ text }) => text),
+    titles: blocks
+      .filter(({ diagram }) => !diagram)
+      .map(({ title }) => title ?? ""),
     diagrams: blocks.filter(({ diagram }) => diagram).length,
     headings: findAll(
       post.body,
@@ -379,9 +387,13 @@ test.describe("without JavaScript", () => {
       rich.some(({ headings }) => headings > 0),
       "a heading link",
     ).toBe(true);
+    expect(
+      rich.some(({ titles }) => titles.some(Boolean)),
+      "a code block with a title",
+    ).toBe(true);
   });
 
-  for (const { post, callouts, code, headings, images } of rich) {
+  for (const { post, callouts, code, titles, headings, images } of rich) {
     test(`${postPath(post.slug)} shows its callouts, code and heading links`, async ({
       page,
     }) => {
@@ -394,8 +406,30 @@ test.describe("without JavaScript", () => {
           new RegExp(`^(${Object.values(calloutLabels).join("|")})$`),
         );
       }
-      await expect(body.locator("pre.shiki")).toHaveText(code);
-      await expect(body.locator(".code-actions")).toHaveCount(0);
+      const shown = await body
+        .locator(".expressive-code pre")
+        .evaluateAll((blocks) =>
+          blocks.map((pre) =>
+            [...pre.querySelectorAll(".ec-line .code")]
+              .map((line) => line.textContent)
+              .join("\n"),
+          ),
+        );
+      expect(shown).toEqual(code);
+      const shownTitles = await body
+        .locator(".expressive-code .frame")
+        .evaluateAll((frames) =>
+          frames.map(
+            (frame) =>
+              frame.querySelector(":scope > figcaption .title")?.textContent ??
+              "",
+          ),
+        );
+      expect(shownTitles).toEqual(titles);
+      await expect(
+        page.locator('link[rel=stylesheet][href="/code.css"]'),
+      ).toHaveCount(1);
+      await expect(body.locator(".code-actions button")).toHaveCount(0);
       const links = body.locator(":is(h2, h3, h4, h5, h6) > a.heading-link");
       await expect(links).toHaveCount(headings);
       for (const link of await links.all()) {
@@ -519,33 +553,22 @@ test.describe("with JavaScript", () => {
         .locator(".post-body .code-block")
         .evaluateAll((elements) =>
           elements.map((block) => {
-            const pre = block.querySelector("pre");
-            const button = block
+            const actions = block
               .querySelector(".code-actions")
               ?.getBoundingClientRect();
-            const style = pre ? getComputedStyle(pre) : undefined;
-            const overlaps = [...block.querySelectorAll(".line")].some(
-              (line) => {
-                const box = line.getBoundingClientRect();
-                return (
-                  button !== undefined &&
-                  box.width > 0 &&
-                  box.left < button.right &&
-                  box.right > button.left &&
-                  box.top < button.bottom &&
-                  box.bottom > button.top
-                );
-              },
-            );
-            return {
-              overlaps,
-              sides: [style?.paddingLeft, style?.paddingRight],
-            };
+            const frame = block
+              .querySelector(".expressive-code")
+              ?.getBoundingClientRect();
+            return { actionsBottom: actions?.bottom, frameTop: frame?.top };
           }),
         );
-      for (const { overlaps, sides } of blocks) {
-        expect(overlaps, "the button covers a line of code").toBe(false);
-        expect(sides[1], "space reserved beside every line").toBe(sides[0]);
+      for (const { actionsBottom, frameTop } of blocks) {
+        expect(actionsBottom, "the buttons' row").toBeDefined();
+        expect(frameTop, "the code's frame").toBeDefined();
+        expect(
+          actionsBottom ?? Infinity,
+          "the buttons sit over the code",
+        ).toBeLessThanOrEqual(frameTop ?? -Infinity);
       }
     });
 
@@ -625,7 +648,53 @@ test.describe("with JavaScript", () => {
         expect(await overflows(), "a wrapped block scrolls sideways").toBe(
           false,
         );
-        expect((await pre.textContent())?.replace(/\n$/, "")).toBe(text);
+        expect(
+          await pre.evaluate((element) =>
+            [...element.querySelectorAll(".ec-line .code")]
+              .map((line) => line.textContent)
+              .join("\n"),
+          ),
+        ).toBe(text);
+        const wrappedLines = await pre.evaluate((element) =>
+          [...element.querySelectorAll(".ec-line .code")].flatMap((line) => {
+            const range = document.createRange();
+            range.selectNodeContents(line);
+            const boxes = [...range.getClientRects()].filter(
+              (box) => box.width > 0,
+            );
+            const firstTop = Math.min(...boxes.map((box) => box.top));
+            const later = boxes.filter((box) => box.top > firstTop + 2);
+            if (later.length === 0) {
+              return [];
+            }
+            const walker = document.createTreeWalker(
+              line,
+              NodeFilter.SHOW_TEXT,
+            );
+            while (walker.nextNode()) {
+              const node = walker.currentNode as Text;
+              const index = node.data.search(/\S/);
+              if (index >= 0) {
+                const char = document.createRange();
+                char.setStart(node, index);
+                char.setEnd(node, index + 1);
+                return [
+                  {
+                    start: char.getBoundingClientRect().left,
+                    continuation: Math.min(...later.map((box) => box.left)),
+                  },
+                ];
+              }
+            }
+            return [];
+          }),
+        );
+        for (const { start, continuation } of wrappedLines) {
+          expect(
+            continuation,
+            "a continuation starts no deeper than its own line",
+          ).toBeGreaterThan(start + 1);
+        }
         await wrap.click();
         await expect(wrap).toHaveAttribute("aria-pressed", "false");
         expect(await overflows()).toBe(before);
@@ -665,6 +734,17 @@ for (const { from, to } of redirects) {
     expect((await request.get(to)).status()).toBe(200);
   });
 }
+
+test("/code.css styles the code blocks, in both themes", async ({
+  request,
+}) => {
+  const response = await request.get("/code.css");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toContain("text/css");
+  const css = await response.text();
+  expect(css).toContain(".expressive-code");
+  expect(css).toContain("@media (prefers-color-scheme: light)");
+});
 
 test("the resume is the committed PDF, to open or save", async ({
   request,

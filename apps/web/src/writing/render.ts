@@ -1,37 +1,17 @@
 import type { Element, Root, RootContent } from "hast";
-import { codeToHast } from "shiki";
+import { renderCode } from "./code";
 import { maxDiagramWidth, renderDiagrams } from "./diagrams";
 import { postFile, type Post } from "./writing";
 
 export const diagramTag = "post-diagram";
 
-export const codeThemes = {
-  light: "one-light",
-  dark: "one-dark-pro",
-} as const;
-
-export const colorReplacements = {
-  "one-light": {
-    "#a0a1a7": "#707179",
-    "#c18401": "#986801",
-    "#4078f2": "#2867f0",
-    "#0184bc": "#0179ad",
-    "#e45649": "#d72f20",
-    "#50a14f": "#3f7f3e",
-  },
-  "one-dark-pro": {
-    "#e06c75": "#e2747d",
-    "#5c6370": "#8e95a2",
-    "#f44747": "#f66464",
-    "#7f848e": "#91959e",
-    "#be5046": "#cf7e77",
-  },
-};
+export const codeTag = "post-code";
 
 type Block = {
   parent: Root | Element;
   index: number;
   lang: string | undefined;
+  meta: string;
   code: string;
   line: number | undefined;
 };
@@ -71,6 +51,7 @@ function findBlocks(node: Root | Element, blocks: Block[]) {
         parent: node,
         index,
         lang: languageOf(code),
+        meta: metaOf(code),
         code: textOf(code).replace(/\n$/, ""),
         line: child.position?.start.line,
       });
@@ -80,18 +61,18 @@ function findBlocks(node: Root | Element, blocks: Block[]) {
   });
 }
 
-export async function highlight(code: string, lang = "text") {
-  const tree = await codeToHast(code, {
-    lang,
-    themes: codeThemes,
-    defaultColor: false,
-    colorReplacements,
-  });
-  const [pre] = tree.children;
-  if (pre?.type !== "element") {
-    throw new Error(`Shiki returned no block for ${lang}`);
-  }
-  return pre;
+function metaOf(code: Element) {
+  const meta = (code.data as { meta?: unknown } | undefined)?.meta;
+  return typeof meta === "string" ? meta : "";
+}
+
+async function codeElement(block: Block): Promise<Element> {
+  return {
+    type: "element",
+    tagName: codeTag,
+    properties: {},
+    children: await renderCode(block.code, block.lang ?? "text", block.meta),
+  };
 }
 
 function diagramElement(light: string, dark: string): Element {
@@ -113,7 +94,7 @@ export async function renderBody(slug: string, body: Root): Promise<Root> {
     diagrams.length > 0
       ? renderDiagrams(diagrams.map((block) => block.code))
       : [],
-    Promise.all(code.map((block) => highlight(block.code, block.lang))),
+    Promise.all(code.map((block) => codeElement(block))),
   ]);
   const problems: string[] = [];
   diagrams.forEach((block, i) => {
@@ -139,9 +120,9 @@ export async function renderBody(slug: string, body: Root): Promise<Root> {
     throw new Error(problems.join("\n"));
   }
   code.forEach((block, i) => {
-    const pre = highlighted[i];
-    if (pre) {
-      block.parent.children[block.index] = pre;
+    const element = highlighted[i];
+    if (element) {
+      block.parent.children[block.index] = element;
     }
   });
   return tree;

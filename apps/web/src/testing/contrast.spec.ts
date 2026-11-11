@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { contrastRatio } from "./contrast";
+import { blend, contrastRatio } from "./contrast";
+
+describe("blend", () => {
+  it("lays a half-transparent colour over another", () => {
+    expect(blend("#ffffff80", "#000000")).toBe("#808080");
+  });
+
+  it("keeps an opaque colour as it is, and ignores the one under it", () => {
+    expect(blend("#123456", "#ffffff")).toBe("#123456");
+    expect(blend("#123456ff", "#ffffff")).toBe("#123456");
+  });
+
+  it("shows only the colour under a transparent one", () => {
+    expect(blend("#12345600", "#abcdef")).toBe("#abcdef");
+  });
+});
 
 describe("contrastRatio", () => {
   it("is 21 for black on white, either way round", () => {

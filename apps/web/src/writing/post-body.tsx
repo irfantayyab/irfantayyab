@@ -2,7 +2,7 @@ import type { Root } from "hast";
 import { type Components, toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { CodeBlock } from "./code-block";
-import { diagramTag } from "./render";
+import { codeTag, diagramTag } from "./render";
 
 function Diagram({ light, dark }: { light?: string; dark?: string }) {
   return (
@@ -21,7 +21,7 @@ function Diagram({ light, dark }: { light?: string; dark?: string }) {
 
 const components = {
   [diagramTag]: Diagram,
-  pre: CodeBlock,
+  [codeTag]: CodeBlock,
 } as Partial<Components>;
 
 export function PostBody({ body }: { body: Root }) {
