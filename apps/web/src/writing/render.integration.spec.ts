@@ -2,8 +2,8 @@ import type { Element, Root } from "hast";
 import { toHtml } from "hast-util-to-html";
 import { chromium } from "playwright";
 import { describe, expect, it } from "vitest";
-import { diagramAnchor } from "@/app/page-ids";
-import { feedDiagramLinks } from "@/testing/feed-diagrams";
+import { diagramAnchor, diagramImageFile } from "@/app/page-ids";
+import { feedDiagramImages } from "@/testing/feed-diagrams";
 import { nestedDiagramTitles, nestedDiagrams } from "@/testing/nested-diagrams";
 import { feedBody } from "./feed";
 import { parseMarkdown } from "./markdown";
@@ -53,7 +53,7 @@ describe.skipIf(!hasBrowser)("renderBody with diagrams", () => {
     expect(light).not.toEqual(dark);
   });
 
-  it("gives each diagram the anchor the feed links it to, nested ones included", async () => {
+  it("gives each diagram its anchor, in the order the feed numbers its images, nested ones included", async () => {
     const post: Post = {
       slug: "a-post",
       title: "A post",
@@ -82,14 +82,14 @@ describe.skipIf(!hasBrowser)("renderBody with diagrams", () => {
       }
     };
     walk(rendered);
-    const links = feedDiagramLinks(toHtml(feedBody(post)));
+    const images = feedDiagramImages(toHtml(feedBody(post)));
     expect(drawn).toHaveLength(nestedDiagramTitles.length);
-    expect(links).toHaveLength(nestedDiagramTitles.length);
+    expect(images).toHaveLength(nestedDiagramTitles.length);
     for (const [i, { id, light }] of drawn.entries()) {
-      const link = links[i];
+      const image = images[i];
       expect(id).toBe(diagramAnchor(i));
-      expect(link?.href.endsWith(`#${diagramAnchor(i)}`)).toBe(true);
-      expect(light).toContain(link?.title ?? "missing");
+      expect(image?.src.endsWith(`/${diagramImageFile(i)}`)).toBe(true);
+      expect(light).toContain(image?.alt ?? "missing");
     }
   });
 

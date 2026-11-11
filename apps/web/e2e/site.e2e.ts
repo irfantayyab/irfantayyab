@@ -4,7 +4,12 @@ import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { extractText, getDocumentProxy } from "unpdf";
-import { diagramAnchor } from "../src/app/page-ids";
+import {
+  diagramAnchor,
+  diagramImage,
+  diagramImageFile,
+} from "../src/app/page-ids";
+import { imageBudget } from "../src/image-budget";
 import {
   cardSize,
   feedPath,
@@ -497,6 +502,38 @@ test.describe("without JavaScript", () => {
       }
     });
 
+    test(`${postPath(post.slug)}'s diagram images are its light drawings, at twice their size`, async ({
+      page,
+      request,
+    }) => {
+      const { diagrams = 0 } = rich.find((item) => item.post === post) ?? {};
+      await page.emulateMedia({ colorScheme: "light" });
+      await page.goto(postPath(post.slug));
+      for (let i = 0; i < diagrams; i++) {
+        const box = await page
+          .locator(`#${diagramAnchor(i)} .diagram-light svg`)
+          .boundingBox();
+        const response = await request.get(
+          postFilePath(post.slug, diagramImageFile(i)),
+        );
+        expect(response.status()).toBe(200);
+        expect(response.headers()["content-type"]).toBe("image/png");
+        const png = await response.body();
+        expect(png.subarray(1, 4).toString("latin1")).toBe("PNG");
+        expect(png.byteLength).toBeLessThanOrEqual(imageBudget);
+        const { padding, scale } = diagramImage;
+        const expected = [box?.width ?? 0, box?.height ?? 0].map(
+          (side) => (side + 2 * padding) * scale,
+        );
+        for (const [j, side] of [
+          png.readUInt32BE(16),
+          png.readUInt32BE(20),
+        ].entries()) {
+          expect(Math.abs(side - (expected[j] ?? 0))).toBeLessThanOrEqual(2);
+        }
+      }
+    });
+
     for (const { colorScheme } of themes) {
       test(`${postPath(post.slug)} shows each diagram once in the ${colorScheme} theme`, async ({
         page,
@@ -545,20 +582,23 @@ test.describe("without JavaScript", () => {
     }
   }
 
-  test("the export holds each post's images and no others", () => {
+  test("the export holds each post's images and diagram images, and no others", () => {
     const shipped = readdirSync(`${outDir}writing`, {
       recursive: true,
       encoding: "utf8",
     })
       .map((file) => file.replaceAll("\\", "/"))
-      .filter((file) => file.endsWith(".webp"))
+      .filter((file) => /\.webp$|(?:^|\/)diagram-[^/]*\.png$/.test(file))
       .map((file) => `/writing/${file}`)
       .sort();
     expect(shipped).toEqual(
-      writing.posts
-        .flatMap((post) =>
-          post.images.map(({ file }) => postFilePath(post.slug, file)),
-        )
+      rich
+        .flatMap(({ post, diagrams }) => [
+          ...post.images.map(({ file }) => postFilePath(post.slug, file)),
+          ...Array.from({ length: diagrams }, (_, i) =>
+            postFilePath(post.slug, diagramImageFile(i)),
+          ),
+        ])
         .sort(),
     );
   });
@@ -1137,20 +1177,20 @@ test.describe("sharing", () => {
         (body.match(/<blockquote>\s*<p class="callout-label"><strong>/g) ?? [])
           .length,
       ).toBe(callouts);
-      const diagramLinks = [
-        ...body.matchAll(/href="([^"]+)">The diagram is on the site\./g),
-      ].map(([, href]) => href ?? "");
-      expect(diagramLinks).toHaveLength(diagrams);
-      for (const [n, href] of diagramLinks.entries()) {
-        const hash = `#${diagramAnchor(n)}`;
-        expect(href).toBe(
-          `${absoluteUrl(postPath(writing.posts[i]?.slug ?? ""))}${hash}`,
+      const diagramImages = [
+        ...body.matchAll(/<img src="([^"]+\/diagram-\d+\.png)" alt="([^"]*)"/g),
+      ].map(([, src = "", alt = ""]) => ({ src, alt }));
+      expect(diagramImages).toHaveLength(diagrams);
+      for (const [n, { src, alt }] of diagramImages.entries()) {
+        expect(src).toBe(
+          absoluteUrl(
+            postFilePath(writing.posts[i]?.slug ?? "", diagramImageFile(n)),
+          ),
         );
-        await page.goto(localPath(href));
-        await expect(page.locator(hash)).toBeInViewport();
-        await expect(
-          page.locator(hash).locator(".diagram-light svg"),
-        ).toBeVisible();
+        expect(alt).toMatch(/\S/);
+        const image = await request.get(localPath(src));
+        expect(image.status()).toBe(200);
+        expect(image.headers()["content-type"]).toBe("image/png");
       }
     }
   });

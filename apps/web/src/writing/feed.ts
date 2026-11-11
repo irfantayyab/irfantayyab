@@ -1,14 +1,19 @@
 import { MetaOptions } from "expressive-code";
 import type { Element, ElementContent, Root, RootContent } from "hast";
 import { toHtml } from "hast-util-to-html";
-import { diagramAnchor } from "@/app/page-ids";
+import { diagramImageFile } from "@/app/page-ids";
 import { feedPath, feedTitle, writingDescription } from "@/app/page-metadata";
 import { absoluteUrl } from "@/site";
-import { postPath, type Post, type Writing } from "./writing";
-
-const diagramNote = "The diagram is on the site.";
+import {
+  postFilePath,
+  postPath,
+  tagPath,
+  type Post,
+  type Writing,
+} from "./writing";
 
 type Context = {
+  slug: string;
   postUrl: string;
   diagrams: number;
 };
@@ -68,14 +73,12 @@ function codeBlock(pre: Element, context: Context): Element[] | undefined {
   const source = textOf(code).replace(/\n$/, "");
   if (classesOf(code).includes("language-mermaid")) {
     const { title, description } = diagramText(source);
+    const src = absoluteUrl(
+      postFilePath(context.slug, diagramImageFile(context.diagrams++)),
+    );
     return [
-      boldLine(title),
+      element("p", [element("img", [], { src, alt: title })]),
       element("p", [text(description)]),
-      element("p", [
-        element("a", [text(diagramNote)], {
-          href: `${context.postUrl}#${diagramAnchor(context.diagrams++)}`,
-        }),
-      ]),
     ];
   }
   const meta = (code.data as { meta?: unknown } | undefined)?.meta;
@@ -124,6 +127,7 @@ function portable(node: RootContent, context: Context): RootContent[] {
 
 export function feedBody(post: Post): Root {
   const context: Context = {
+    slug: post.slug,
     postUrl: absoluteUrl(postPath(post.slug)),
     diagrams: 0,
   };
@@ -163,7 +167,13 @@ export function feedXml({ posts, tags }: Writing) {
       tag("guid", url, ' isPermaLink="true"'),
       tag("pubDate", rfc822(post.date)),
       tag("description", post.description),
-      ...post.tags.map((slug) => tag("category", labels.get(slug) ?? slug)),
+      ...post.tags.map((slug) =>
+        tag(
+          "category",
+          labels.get(slug) ?? slug,
+          ` domain="${escapeXml(absoluteUrl(tagPath(slug)))}"`,
+        ),
+      ),
       tag("content:encoded", toHtml(feedBody(post))),
       "</item>",
     ].join("\n");

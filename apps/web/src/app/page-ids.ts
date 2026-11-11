@@ -10,6 +10,12 @@ export function diagramAnchor(index: number) {
   return `${diagramIdPrefix}${index + 1}`;
 }
 
+export const diagramImage = { padding: 24, scale: 2 } as const;
+
+export function diagramImageFile(index: number) {
+  return `${diagramAnchor(index)}.png`;
+}
+
 export function isPageId(id: string) {
   return pageIds.has(id) || diagramId.test(id);
 }

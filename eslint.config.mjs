@@ -20,7 +20,7 @@ export default defineConfig([
     "resume/**",
   ]),
   {
-    files: ["*.mjs", "scripts/**"],
+    files: ["*.mjs", "scripts/**", "apps/crosspost/**"],
     settings: {
       react: { version: "19.0" },
     },

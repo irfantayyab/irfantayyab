@@ -1,12 +1,18 @@
 import { toHtml } from "hast-util-to-html";
 import { describe, expect, it } from "vitest";
-import { diagramAnchor } from "@/app/page-ids";
+import { diagramImageFile } from "@/app/page-ids";
 import { absoluteUrl } from "@/site";
-import { feedDiagramLinks } from "@/testing/feed-diagrams";
+import { feedDiagramImages } from "@/testing/feed-diagrams";
 import { nestedDiagrams, nestedDiagramTitles } from "@/testing/nested-diagrams";
 import { diagramText, feedBody, feedXml } from "./feed";
 import { parseMarkdown } from "./markdown";
-import { postPath, type Post, type Writing } from "./writing";
+import {
+  postFilePath,
+  postPath,
+  tagPath,
+  type Post,
+  type Writing,
+} from "./writing";
 
 function postWith(source: string, overrides: Partial<Post> = {}): Post {
   return {
@@ -51,18 +57,19 @@ describe("feedBody", () => {
     );
   });
 
-  it("writes a diagram as its title, its description and a link to it on the post", () => {
+  it("writes a diagram as its image, named by its title, with its description below", () => {
     expect(html(diagram)).toBe(
-      `<p><strong>Saving builds the PDF</strong></p><p>The source is built,</p><p><a href="${postUrl}#diagram-1">The diagram is on the site.</a></p>`,
+      `<p><img src="${absoluteUrl("/writing/a-post/diagram-1.png")}" alt="Saving builds the PDF"></p><p>The source is built,</p>`,
     );
   });
 
-  it("links each diagram to its own place on the post, counting nested ones in order", () => {
+  it("gives each diagram its own image, counting nested ones in order", () => {
     expect(parseMarkdown(nestedDiagrams).problems).toEqual([]);
-    expect(feedDiagramLinks(html(nestedDiagrams))).toEqual(
+    expect(feedDiagramImages(html(nestedDiagrams))).toEqual(
       nestedDiagramTitles.map((title, i) => ({
-        title,
-        href: `${postUrl}#${diagramAnchor(i)}`,
+        src: absoluteUrl(postFilePath("a-post", diagramImageFile(i))),
+        alt: title,
+        description: `The diagram ${title.toLowerCase()}.`,
       })),
     );
   });
@@ -160,9 +167,12 @@ describe("feedXml", () => {
     );
   });
 
-  it("names each post's tags by their labels", () => {
-    expect(xml).toContain("<category>AI</category>");
-    expect(xml).toContain("<category>Testing</category>");
+  it("names each post's tags by their labels, with their tag pages as the domain", () => {
+    for (const { slug, label } of writing.tags) {
+      expect(xml).toContain(
+        `<category domain="${absoluteUrl(tagPath(slug))}">${label}</category>`,
+      );
+    }
   });
 
   it("is the same every time it is built from the same posts", () => {

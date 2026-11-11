@@ -1,0 +1,234 @@
+import type { FeedPost } from "./feed.ts";
+import { toMarkdown } from "./markdown.ts";
+
+export const xLimit = 280;
+export const xLinkLength = 23;
+export const hackerNewsTitleLimit = 80;
+
+export function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+export function xLength(text: string) {
+  return [...text.replace(/https?:\/\/\S+/g, "x".repeat(xLinkLength))].length;
+}
+
+export function xPost(post: FeedPost) {
+  const full = `${post.title}\n\n${post.description}\n\n${post.url}`;
+  return xLength(full) <= xLimit ? full : `${post.title}\n\n${post.url}`;
+}
+
+export function linkedInPost(post: FeedPost) {
+  return `${post.title}\n\n${post.description}\n\n${post.url}`;
+}
+
+export function originNote(post: FeedPost) {
+  return `<p><em>Originally published at <a href="${escapeHtml(post.url)}">${escapeHtml(new URL(post.url).host)}</a>.</em></p>`;
+}
+
+export function hashnodeMarkdown(post: FeedPost) {
+  return toMarkdown(post.body);
+}
+
+type Section = {
+  id: string;
+  heading: string;
+  steps: readonly string[];
+  fields: readonly Field[];
+};
+
+type Field =
+  | { kind: "text"; label: string; value: string; note?: string }
+  | { kind: "html"; label: string; html: string };
+
+function fieldHtml(sectionId: string, field: Field, index: number) {
+  const id = `${sectionId}-${index}`;
+  const button = `<button type="button" data-copy="${id}" data-kind="${field.kind}">Copy</button>`;
+  if (field.kind === "html") {
+    return `<div class="field"><div class="label">${escapeHtml(field.label)} ${button}</div><div class="article" id="${id}">${field.html}</div></div>`;
+  }
+  const rows = Math.min(24, field.value.split("\n").length + 1);
+  const note = field.note
+    ? `<span class="note">${escapeHtml(field.note)}</span>`
+    : "";
+  return `<div class="field"><div class="label">${escapeHtml(field.label)} ${button} ${note}</div><textarea id="${id}" rows="${rows}" readonly>${escapeHtml(field.value)}</textarea></div>`;
+}
+
+function sectionHtml(section: Section) {
+  const steps = section.steps.map((step) => `<li>${step}</li>`).join("");
+  const fields = section.fields
+    .map((field, i) => fieldHtml(section.id, field, i))
+    .join("");
+  return `<section id="${section.id}"><h2>${escapeHtml(section.heading)}</h2><ol>${steps}</ol>${fields}</section>`;
+}
+
+export function draftSections(post: FeedPost) {
+  const url = escapeHtml(post.url);
+  const article = `${post.body}${originNote(post)}`;
+  const tagLabels = post.tags.map((tag) => tag.label).join(", ");
+  const x = xPost(post);
+  const sections: Section[] = [
+    {
+      id: "medium",
+      heading: "Medium",
+      steps: [
+        "Write a story, paste the title, then the article below it.",
+        `In the story's settings, under Advanced settings, set the canonical link to <code>${url}</code>.`,
+        "Add the tags, then publish.",
+      ],
+      fields: [
+        { kind: "text", label: "Title", value: post.title },
+        { kind: "html", label: "Article", html: article },
+        { kind: "text", label: "Tags", value: tagLabels },
+      ],
+    },
+    {
+      id: "linkedin-article",
+      heading: "LinkedIn article",
+      steps: [
+        "Write an article, paste the title and the article.",
+        `Upload the card as the cover: <a href="${escapeHtml(post.card)}">${escapeHtml(post.card)}</a>. LinkedIn has no canonical link, so the article ends with the note that it was first published on the site.`,
+      ],
+      fields: [
+        { kind: "text", label: "Title", value: post.title },
+        { kind: "html", label: "Article", html: article },
+      ],
+    },
+    {
+      id: "linkedin-post",
+      heading: "LinkedIn post",
+      steps: ["Start a post and paste this. The card shows from the link."],
+      fields: [{ kind: "text", label: "Post", value: linkedInPost(post) }],
+    },
+    {
+      id: "x",
+      heading: "X",
+      steps: ["Post this. The card shows from the link."],
+      fields: [
+        {
+          kind: "text",
+          label: "Post",
+          value: x,
+          note: `${xLength(x)} of ${xLimit}`,
+        },
+      ],
+    },
+    {
+      id: "reddit",
+      heading: "Reddit",
+      steps: [
+        "Choose a subreddit that allows links to your own writing, and read its rules first.",
+        "Create a link post with this title and link.",
+      ],
+      fields: [
+        { kind: "text", label: "Title", value: post.title },
+        { kind: "text", label: "Link", value: post.url },
+      ],
+    },
+    {
+      id: "hacker-news",
+      heading: "Hacker News",
+      steps: ["Submit this title and URL, with no text."],
+      fields: [
+        {
+          kind: "text",
+          label: "Title",
+          value: post.title,
+          note:
+            post.title.length > hackerNewsTitleLimit
+              ? `${post.title.length} characters, over the ${hackerNewsTitleLimit} Hacker News allows`
+              : `${post.title.length} of ${hackerNewsTitleLimit}`,
+        },
+        { kind: "text", label: "URL", value: post.url },
+      ],
+    },
+  ];
+  sections.splice(1, 0, {
+    id: "hashnode",
+    heading: "Hashnode",
+    steps: [
+      "Write a new article, paste the title and the Markdown.",
+      `In the article's settings, turn on republishing and set the original URL to <code>${url}</code>.`,
+      `Set the cover to the card, <a href="${escapeHtml(post.card)}">${escapeHtml(post.card)}</a>, add the tags and the description, then publish.`,
+    ],
+    fields: [
+      { kind: "text", label: "Title", value: post.title },
+      { kind: "text", label: "Markdown", value: hashnodeMarkdown(post) },
+      {
+        kind: "text",
+        label: "Tags",
+        value: post.tags.map((tag) => tag.slug).join(", "),
+      },
+      { kind: "text", label: "Description", value: post.description },
+    ],
+  });
+  return sections;
+}
+
+const style = `
+body { font: 16px/1.5 system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; color: #222; background: #fff; }
+section { border-top: 1px solid #ddd; padding-top: 1rem; margin-top: 2rem; }
+.field { margin: 1rem 0; }
+.label { font-weight: 600; margin-bottom: 0.25rem; }
+.note { font-weight: 400; color: #666; }
+textarea { width: 100%; box-sizing: border-box; font: 14px/1.4 ui-monospace, monospace; }
+.article { border: 1px solid #ddd; padding: 0 1rem; max-height: 28rem; overflow: auto; }
+.article img { max-width: 100%; }
+.article pre { overflow: auto; background: #f6f6f6; padding: 0.5rem; }
+button { font: inherit; font-size: 14px; margin-left: 0.5rem; }
+`;
+
+const script = `
+for (const button of document.querySelectorAll("[data-copy]")) {
+  button.addEventListener("click", async () => {
+    const target = document.getElementById(button.dataset.copy);
+    try {
+      if (button.dataset.kind === "html") {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([target.innerHTML], { type: "text/html" }),
+            "text/plain": new Blob([target.innerText], { type: "text/plain" }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(target.value);
+      }
+      button.textContent = "Copied";
+    } catch {
+      button.textContent = "Copy failed";
+    }
+    setTimeout(() => (button.textContent = "Copy"), 2000);
+  });
+}
+`;
+
+export function draftsPage(post: FeedPost) {
+  const sections = draftSections(post);
+  const nav = sections
+    .map(
+      (section) =>
+        `<a href="#${section.id}">${escapeHtml(section.heading)}</a>`,
+    )
+    .join(" · ");
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cross-posts: ${escapeHtml(post.title)}</title>
+<style>${style}</style>
+</head>
+<body>
+<h1>${escapeHtml(post.title)}</h1>
+<p><a href="${escapeHtml(post.url)}">${escapeHtml(post.url)}</a></p>
+<p>${nav}</p>
+${sections.map(sectionHtml).join("\n")}
+<script>${script}</script>
+</body>
+</html>
+`;
+}
