@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { experienceLinks } from "@/portfolio/experience";
-import { portfolioRepoUrl } from "@/portfolio/links";
+import { introLine } from "@/portfolio/intro";
+import {
+  portfolioPdfPath,
+  portfolioRepoUrl,
+  resumePath,
+} from "@/portfolio/links";
 import { ProjectBlock } from "@/portfolio/project-block";
 import { projects } from "@/portfolio/projects";
 import { resume } from "@/resume/claims";
 import { loadWriting } from "@/writing/load";
 import { PostList } from "@/writing/post-list";
-import { pageMetadata, siteDescription } from "./page-metadata";
+import { pageMetadata, siteDescription } from "@/app/page-metadata";
 
 export const metadata: Metadata = pageMetadata({
   path: "/",
@@ -18,7 +23,8 @@ const contactLinks = [
   { label: "GitHub", url: resume.links.github.url },
   { label: "LinkedIn", url: resume.links.linkedin.url },
   { label: resume.email, url: `mailto:${resume.email}` },
-  { label: "Resume (PDF)", url: "/resume.pdf" },
+  { label: "Resume (PDF)", url: resumePath },
+  { label: "Portfolio (PDF)", url: portfolioPdfPath },
 ];
 
 const latestCount = 5;
@@ -34,11 +40,7 @@ export default async function HomePage() {
       <p className="mt-2 font-sans text-base text-muted">{resume.headline}</p>
 
       <div className="mt-10 space-y-5">
-        <p>
-          I build web applications end to end, and lately the AI inside them:
-          models that classify, route and draft, with a person still deciding
-          what goes out.
-        </p>
+        <p>{introLine}</p>
         <p>
           I have shipped React, Next.js and Node.js products in teams, and my
           final year project in computer science is SQREAS, an AI platform that
@@ -49,7 +51,7 @@ export default async function HomePage() {
           tests, and checks that pass before anything ships. This site is built
           that way, in the open. Its source is on{" "}
           <a href={portfolioRepoUrl}>GitHub</a>, and the{" "}
-          <a href="/resume.pdf">resume is a PDF</a> to read or save.
+          <a href={resumePath}>resume is a PDF</a> to read or save.
         </p>
       </div>
 

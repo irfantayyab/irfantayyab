@@ -1,8 +1,9 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
+import { extractText, getDocumentProxy } from "unpdf";
 import { diagramAnchor } from "../src/app/page-ids";
 import {
   cardSize,
@@ -11,6 +12,10 @@ import {
   siteDescription,
 } from "../src/app/page-metadata";
 import { pageColors, textColors } from "../src/app/theme";
+import { experienceLinks } from "../src/portfolio/experience";
+import { introLine } from "../src/portfolio/intro";
+import { portfolioPdfPath, resumePath } from "../src/portfolio/links";
+import { projects } from "../src/portfolio/projects";
 import { resume } from "../src/resume/claims";
 import { resumePdfPath } from "../src/resume/source";
 import { absoluteUrl, siteUrl } from "../src/site";
@@ -268,6 +273,7 @@ test.describe("without JavaScript", () => {
       ["LinkedIn", resume.links.linkedin.url],
       [resume.email, `mailto:${resume.email}`],
       ["Resume (PDF)", "/resume.pdf"],
+      ["Portfolio (PDF)", portfolioPdfPath],
     ]) {
       await expect(contact.getByRole("link", { name })).toHaveAttribute(
         "href",
@@ -867,6 +873,112 @@ test("the resume is the committed PDF, to open or save", async ({
   expect((await response.body()).equals(await readFile(resumePdfPath))).toBe(
     true,
   );
+});
+
+test.describe("the portfolio PDF", () => {
+  async function loadPdf(request: APIRequestContext) {
+    const response = await request.get(portfolioPdfPath);
+    expect(response.status()).toBe(200);
+    return {
+      response,
+      pdf: await getDocumentProxy(new Uint8Array(await response.body())),
+    };
+  }
+
+  test("is served to open or save", async ({ request }) => {
+    const { response } = await loadPdf(request);
+    expect(response.headers()["content-type"]).toBe("application/pdf");
+    expect(response.headers()["content-disposition"]).toBe(
+      'inline; filename="Irfan_Tayyab_Portfolio.pdf"',
+    );
+  });
+
+  test("has a cover, a page per project, the experience and the contact, each A4 landscape", async ({
+    request,
+  }) => {
+    const { pdf } = await loadPdf(request);
+    expect(pdf.numPages).toBe(projects.length + 3);
+    for (let number = 1; number <= pdf.numPages; number++) {
+      const { width, height } = (await pdf.getPage(number)).getViewport({
+        scale: 1,
+      });
+      expect(width, `page ${number}'s width`).toBeCloseTo(841.89, 0);
+      expect(height, `page ${number}'s height`).toBeCloseTo(595.28, 0);
+    }
+  });
+
+  test("states every fact from the site's own modules", async ({ request }) => {
+    const { pdf } = await loadPdf(request);
+    const { text } = await extractText(pdf, { mergePages: true });
+    const flat = text.replace(/\s+/g, " ");
+    const facts = [
+      resume.name,
+      resume.headline,
+      introLine,
+      resume.email,
+      ...projects.flatMap(({ name, summary, problem, part, stack }) => [
+        name,
+        summary,
+        problem,
+        part,
+        ...stack,
+      ]),
+      ...resume.experience.flatMap(({ title, organisation, dates }) => [
+        `${title}, ${organisation}`,
+        dates,
+      ]),
+      ...resume.education.map(
+        ({ title, organisation }) => `${title}, ${organisation}`,
+      ),
+    ];
+    expect(facts.filter((fact) => !flat.includes(fact))).toEqual([]);
+  });
+
+  test("links only the site and the modules' own addresses, every one of them", async ({
+    request,
+  }) => {
+    const { pdf } = await loadPdf(request);
+    const found = new Set<string>();
+    for (let number = 1; number <= pdf.numPages; number++) {
+      const annotations: { subtype?: string; url?: string }[] = await (
+        await pdf.getPage(number)
+      ).getAnnotations();
+      for (const { subtype, url } of annotations) {
+        if (subtype === "Link") {
+          expect(url, `a link on page ${number} has an address`).toBeTruthy();
+          found.add(new URL(url ?? "").href);
+        }
+      }
+    }
+    const expected = new Set(
+      [
+        `mailto:${resume.email}`,
+        siteUrl,
+        absoluteUrl(resumePath),
+        resume.links.github.url,
+        resume.links.linkedin.url,
+        ...projects.flatMap(({ links }) => links.map(({ url }) => url)),
+        ...Object.values(experienceLinks),
+      ].map((url) => new URL(url).href),
+    );
+    expect([...found].sort()).toEqual([...expected].sort());
+  });
+
+  test("is set in Newsreader only", async ({ request }) => {
+    const { response } = await loadPdf(request);
+    const fonts = [
+      ...(await response.body())
+        .toString("latin1")
+        .matchAll(/\/FontName\s*\/[A-Z]{6}\+([^\s/<>[\]()]+)/g),
+    ].map(([, name]) => name);
+    expect(fonts.length).toBeGreaterThan(0);
+    expect(fonts.filter((name) => !name?.startsWith("Newsreader"))).toEqual([]);
+  });
+
+  test("leaves its page out of the export", async ({ request }) => {
+    expect(existsSync(`${outDir}print`)).toBe(false);
+    expect((await request.get("/print/portfolio")).status()).toBe(404);
+  });
 });
 
 function localPath(url: string) {

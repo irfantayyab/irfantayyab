@@ -1,0 +1,63 @@
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+.pdf-page {
+  width: 297mm;
+  height: 210mm;
+  overflow: hidden;
+  break-after: page;
+}
+
+.pdf-page:last-child {
+  break-after: auto;
+}
+
+.pdf-tint {
+  margin: 24px 24px 24px 0;
+  border-radius: 0.75rem;
+  background-color: var(--code);
+}
+
+.pdf-shot {
+  border: 1px solid var(--underline);
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 32px -12px rgb(34 33 31 / 0.25);
+}
+
+.pdf-rule {
+  border-left: 1px solid var(--underline);
+}
+
+.pdf-display {
+  font-size: 80px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.pdf-title {
+  font-size: 48px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.pdf-subtitle {
+  font-size: 28px;
+  line-height: 1.3;
+}
+
+.pdf-lead {
+  font-size: 20px;
+  line-height: 1.45;
+}
+
+.pdf-body {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.pdf-small {
+  font-size: 14px;
+  line-height: 1.5;
+}
