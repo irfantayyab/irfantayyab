@@ -1024,9 +1024,19 @@ test.describe("sharing", () => {
         (body.match(/<blockquote>\s*<p class="callout-label"><strong>/g) ?? [])
           .length,
       ).toBe(callouts);
-      expect(body.split("The diagram is on the site.").length - 1).toBe(
-        diagrams,
-      );
+      const diagramLinks = [
+        ...body.matchAll(/href="([^"]+)">The diagram is on the site\./g),
+      ].map(([, href]) => href ?? "");
+      expect(diagramLinks).toHaveLength(diagrams);
+      for (const href of diagramLinks) {
+        const { hash } = new URL(href);
+        expect(href).toBe(
+          `${absoluteUrl(postPath(writing.posts[i]?.slug ?? ""))}${hash}`,
+        );
+        await page.goto(localPath(href));
+        await expect(page.locator(hash)).toBeVisible();
+        await expect(page.locator(hash).locator("svg").first()).toBeVisible();
+      }
     }
   });
 

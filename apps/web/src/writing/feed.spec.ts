@@ -48,10 +48,19 @@ describe("feedBody", () => {
     );
   });
 
-  it("writes a diagram as its title, its description and a link to the post", () => {
+  it("writes a diagram as its title, its description and a link to it on the post", () => {
     expect(html(diagram)).toBe(
-      `<p><strong>Saving builds the PDF</strong></p><p>The source is built,</p><p><a href="${postUrl}">The diagram is on the site.</a></p>`,
+      `<p><strong>Saving builds the PDF</strong></p><p>The source is built,</p><p><a href="${postUrl}#diagram-1">The diagram is on the site.</a></p>`,
     );
+  });
+
+  it("links each diagram to its own place on the post, counting nested ones in order", () => {
+    const out = html(`${diagram}\n> [!NOTE]\n> Inside.\n\n${diagram}`);
+    expect(
+      [...out.matchAll(/href="([^"]+)">The diagram is on the site/g)].map(
+        ([, href]) => href,
+      ),
+    ).toEqual([`${postUrl}#diagram-1`, `${postUrl}#diagram-2`]);
   });
 
   it("writes a callout as a quote with its label", () => {

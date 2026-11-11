@@ -1,4 +1,5 @@
 import type { Element, Root, RootContent } from "hast";
+import { diagramAnchor } from "@/app/page-ids";
 import { renderCode } from "./code";
 import { maxDiagramWidth, renderDiagrams } from "./diagrams";
 import { postFile, type Post } from "./writing";
@@ -75,11 +76,11 @@ async function codeElement(block: Block): Promise<Element> {
   };
 }
 
-function diagramElement(light: string, dark: string): Element {
+function diagramElement(light: string, dark: string, id: string): Element {
   return {
     type: "element",
     tagName: diagramTag,
-    properties: { light, dark },
+    properties: { light, dark, id },
     children: [],
   };
 }
@@ -114,6 +115,7 @@ export async function renderBody(slug: string, body: Root): Promise<Root> {
     block.parent.children[block.index] = diagramElement(
       diagram.light,
       diagram.dark,
+      diagramAnchor(i),
     );
   });
   if (problems.length > 0) {
