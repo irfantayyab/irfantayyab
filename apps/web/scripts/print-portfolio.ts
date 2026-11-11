@@ -94,11 +94,17 @@ try {
       .filter((image) => !image.complete || image.naturalWidth === 0)
       .map((image) => image.currentSrc || image.src),
   );
-  const fonts = await page.evaluate(() =>
-    [...document.fonts]
-      .filter((font) => font.status === "error")
-      .map((font) => font.family),
-  );
+  const fonts = await page.evaluate(() => {
+    const faces = [...document.fonts].filter(
+      (font) => !font.family.endsWith(" Fallback"),
+    );
+    return {
+      failed: faces
+        .filter((font) => font.status === "error")
+        .map((font) => font.family),
+      loaded: faces.some((font) => font.status === "loaded"),
+    };
+  });
   const crowded = await page.evaluate(() =>
     [...document.querySelectorAll(".pdf-page")].flatMap((section, index) => {
       const footer = section.querySelector(":scope > footer");
@@ -118,7 +124,8 @@ try {
     ...foreign.map((href) => `${href} is not on ${siteUrl}`),
     ...crowded.map((number) => `page ${number} runs into its footer`),
     ...broken.map((src) => `the image ${src} did not load`),
-    ...fonts.map((family) => `the font ${family} did not load`),
+    ...fonts.failed.map((family) => `the font ${family} did not load`),
+    ...(fonts.loaded ? [] : ["no font loaded from out/"]),
   ];
   if (problems.length > 0) {
     throw new Error(
