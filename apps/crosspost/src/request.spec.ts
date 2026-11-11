@@ -16,7 +16,7 @@ describe("request", () => {
     expect(await request(fetcher, url)).toEqual({
       ok: true,
       status: 201,
-      text: "hello",
+      body: "hello",
     });
   });
 

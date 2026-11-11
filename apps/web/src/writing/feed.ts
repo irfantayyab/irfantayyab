@@ -92,6 +92,31 @@ function codeBlock(pre: Element, context: Context): Element[] | undefined {
   return title ? [boldLine(title), block] : [block];
 }
 
+function calloutQuote(children: ElementContent[]): Element {
+  const blocks = children.filter(
+    (child) => child.type !== "text" || child.value.trim() !== "",
+  );
+  const [label, first, ...rest] = blocks;
+  if (
+    label?.type !== "element" ||
+    !classesOf(label).includes("callout-label")
+  ) {
+    return element("blockquote", blocks);
+  }
+  const lead = element("strong", [text(`${textOf(label)}:`)]);
+  if (first?.type === "element" && first.tagName === "p") {
+    return element("blockquote", [
+      { ...first, children: [lead, text(" "), ...first.children] },
+      ...rest,
+    ]);
+  }
+  return element("blockquote", [
+    element("p", [lead]),
+    ...(first ? [first] : []),
+    ...rest,
+  ]);
+}
+
 function portable(node: RootContent, context: Context): RootContent[] {
   if (node.type !== "element") {
     return [node];
@@ -113,7 +138,7 @@ function portable(node: RootContent, context: Context): RootContent[] {
     return children;
   }
   if (node.tagName === "div" && classes.includes("callout")) {
-    return [element("blockquote", children)];
+    return [calloutQuote(children)];
   }
   const properties = { ...node.properties };
   for (const key of ["href", "src"] as const) {

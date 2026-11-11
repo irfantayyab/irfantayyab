@@ -114,7 +114,7 @@ export async function readFeed(
     if (!answer.ok) {
       throw new FeedError(`${source} answered ${answer.status}`);
     }
-    return parseFeed(answer.text);
+    return parseFeed(answer.body);
   }
   return parseFeed(await readFile(source, "utf8"));
 }

@@ -28,17 +28,18 @@ function reason(error: unknown) {
   return messageOf(error);
 }
 
-export type Answer = {
+export type Answer<T = string> = {
   ok: boolean;
   status: number;
-  text: string;
+  body: T;
 };
 
-export async function request(
+async function send<T>(
   fetcher: typeof fetch,
   url: string,
-  init: RequestInit = {},
-): Promise<Answer> {
+  init: RequestInit,
+  read: (response: Response) => Promise<T>,
+): Promise<Answer<T>> {
   try {
     const response = await fetcher(url, {
       ...init,
@@ -47,9 +48,29 @@ export async function request(
     return {
       ok: response.ok,
       status: response.status,
-      text: await response.text(),
+      body: await read(response),
     };
   } catch (error) {
     throw new RequestError(`${url} could not be reached: ${reason(error)}`);
   }
+}
+
+export function request(
+  fetcher: typeof fetch,
+  url: string,
+  init: RequestInit = {},
+): Promise<Answer> {
+  return send(fetcher, url, init, (response) => response.text());
+}
+
+export function requestBytes(
+  fetcher: typeof fetch,
+  url: string,
+): Promise<Answer<Uint8Array>> {
+  return send(
+    fetcher,
+    url,
+    {},
+    async (response) => new Uint8Array(await response.arrayBuffer()),
+  );
 }

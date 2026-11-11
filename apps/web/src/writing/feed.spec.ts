@@ -74,12 +74,16 @@ describe("feedBody", () => {
     );
   });
 
-  it("writes a callout as a quote with its label", () => {
-    const out = html("> [!NOTE]\n> Mind the gap.\n");
-    expect(out).toMatch(/^<blockquote>/);
-    expect(out).toContain("<strong>Note</strong>");
-    expect(out).toContain("Mind the gap.");
-    expect(out).not.toContain('role="note"');
+  it("writes a callout as one quote, its label leading its first paragraph", () => {
+    expect(html("> [!NOTE]\n> Mind the gap.\n>\n> Then go.\n")).toBe(
+      "<blockquote><p><strong>Note:</strong> Mind the gap.</p><p>Then go.</p></blockquote>",
+    );
+  });
+
+  it("gives a callout's label a line of its own when a list comes first", () => {
+    expect(html("> [!TIP]\n> - One\n> - Two\n")).toMatch(
+      /^<blockquote><p><strong>Tip:<\/strong><\/p><ul>/,
+    );
   });
 
   it("drops a heading's link to itself, keeping its id", () => {

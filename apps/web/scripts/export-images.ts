@@ -1,10 +1,11 @@
-import { readdir, stat } from "node:fs/promises";
+import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import {
   diagramAnchor,
   diagramImage,
   diagramImageFile,
+  imagePngFile,
 } from "../src/app/page-ids.ts";
 import { imageBudget } from "../src/image-budget.ts";
 import { loadProblems, openFromOut, outDir, serveOut } from "./serve-out.ts";
@@ -79,6 +80,44 @@ try {
         );
       }
     }
+    const copies = await page.evaluate(async () => {
+      const sources = [...document.querySelectorAll(".post-body img")]
+        .map((image) => image.getAttribute("src") ?? "")
+        .filter((src) => src.endsWith(".webp"));
+      return Promise.all(
+        sources.map(async (src) => {
+          const image = new Image();
+          image.src = src;
+          try {
+            await image.decode();
+          } catch {
+            return { src, png: undefined };
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          canvas.getContext("2d")?.drawImage(image, 0, 0);
+          return { src, png: canvas.toDataURL("image/png") };
+        }),
+      );
+    });
+    for (const { src, png } of copies) {
+      const name = src.startsWith(`${postPath}/`)
+        ? src.slice(postPath.length + 1)
+        : undefined;
+      if (!name || name.includes("/")) {
+        problems.push(`${postPath}: the image ${src} is not in its folder`);
+      } else if (!png?.startsWith("data:image/png;base64,")) {
+        problems.push(`${postPath}: the image ${src} could not be drawn`);
+      } else {
+        const file = path.join(writingDir, slug, imagePngFile(name));
+        await mkdir(path.dirname(file), { recursive: true });
+        await writeFile(
+          file,
+          Buffer.from(png.slice("data:image/png;base64,".length), "base64"),
+        );
+      }
+    }
   }
   problems.push(...requestProblems());
 } finally {
@@ -87,6 +126,6 @@ try {
 
 if (problems.length > 0) {
   throw new Error(
-    `The diagrams cannot be exported as images:\n${problems.join("\n")}`,
+    `The post images cannot be exported:\n${problems.join("\n")}`,
   );
 }

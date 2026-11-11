@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { diagramAnchor, diagramImageFile, isPageId } from "./page-ids";
+import {
+  diagramAnchor,
+  diagramImageFile,
+  imagePngFile,
+  isPageId,
+} from "./page-ids";
+
+describe("imagePngFile", () => {
+  it("names a post image's PNG copy in its own folder", () => {
+    expect(imagePngFile("resume-headline.webp")).toBe(
+      "png/resume-headline.png",
+    );
+  });
+});
 
 describe("diagramAnchor", () => {
   it("numbers a post's diagrams from 1, as a reader counts them", () => {

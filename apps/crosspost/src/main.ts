@@ -4,6 +4,7 @@ import { dataDir, envFile, parseOptions, run } from "./cli.ts";
 import { devToClient } from "./devto.ts";
 import { draftsPage } from "./drafts.ts";
 import { readFeed } from "./feed.ts";
+import { imageData, withImageMarkers } from "./images.ts";
 
 try {
   const options = parseOptions(process.argv.slice(2));
@@ -20,7 +21,9 @@ try {
       const folder = path.join(dataDir, "crossposts", post.slug);
       await mkdir(folder, { recursive: true });
       const file = path.join(folder, "index.html");
-      await writeFile(file, draftsPage(post));
+      const { images } = withImageMarkers(post.body);
+      const data = await imageData(images.map((image) => image.src));
+      await writeFile(file, draftsPage(post, data));
       return file;
     },
     log: (line) => console.log(line),

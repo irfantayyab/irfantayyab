@@ -82,7 +82,7 @@ describe("draftSections", () => {
     ]);
   });
 
-  it("gives Hashnode the article in Markdown", () => {
+  it("gives Hashnode the article in Markdown, ending with where it was first published", () => {
     const sections = draftSections(feedPost());
     expect(sections.map(({ id }) => id)[1]).toBe("hashnode");
     const markdown = sections[1]?.fields.find(
@@ -90,19 +90,60 @@ describe("draftSections", () => {
     );
     expect(markdown).toMatchObject({
       kind: "text",
-      value: "Body & more.\n\n```ts\na();\n```\n",
+      value:
+        "Body & more.\n\n```ts\na();\n```\n\n_Originally published at [a.dev](https://a.dev/writing/a-post)._\n",
     });
   });
 
-  it("ends the Medium and LinkedIn articles with where the post was first published", () => {
-    for (const id of ["medium", "linkedin-article"]) {
-      const article = draftSections(feedPost())
+  it("ends only the LinkedIn article with where the post was first published, since Medium adds its own", () => {
+    const articleOf = (id: string) => {
+      const field = draftSections(feedPost())
         .find((section) => section.id === id)
-        ?.fields.find((field) => field.kind === "html");
-      expect(article?.kind === "html" && article.html).toMatch(
-        /Originally published at .*<\/p>$/,
-      );
-    }
+        ?.fields.find((candidate) => candidate.kind === "html");
+      return field?.kind === "html" ? field.html : "";
+    };
+    expect(articleOf("linkedin-article")).toMatch(
+      /Originally published at .*<\/p>$/,
+    );
+    expect(articleOf("medium")).toBe(feedPost().body);
+  });
+
+  it("points Medium at the PNG copy of a WebP image", () => {
+    const body =
+      '<figure><img src="https://a.dev/writing/a-post/shot.webp" alt="A shot"><figcaption>Caption</figcaption></figure>';
+    const medium = draftSections(feedPost({ body }))
+      .find(({ id }) => id === "medium")
+      ?.fields.find((field) => field.kind === "html");
+    expect(medium?.kind === "html" && medium.html).toBe(
+      '<figure><img src="https://a.dev/writing/a-post/png/shot.png" alt="A shot"><figcaption>Caption</figcaption></figure>',
+    );
+  });
+
+  it("marks LinkedIn's images in the article and lists each to copy, with its data when fetched", () => {
+    const body =
+      '<p>Text.</p><figure><img src="https://a.dev/writing/a-post/shot.webp" alt="A shot"><figcaption>Caption</figcaption></figure><p><img src="https://a.dev/writing/a-post/diagram-1.png" alt="A diagram"></p>';
+    const data = new Map([
+      [
+        "https://a.dev/writing/a-post/png/shot.png",
+        "data:image/png;base64,AA==",
+      ],
+    ]);
+    const fields =
+      draftSections(feedPost({ body }), data).find(
+        ({ id }) => id === "linkedin-article",
+      )?.fields ?? [];
+    const article = fields.find((field) => field.kind === "html");
+    expect(article?.kind === "html" && article.html).toMatch(
+      /^<p>Text\.<\/p><p>\[Image 1: A shot\]<\/p><p>\[Image 2: A diagram\]<\/p><p><em>Originally/,
+    );
+    expect(
+      fields
+        .filter((field) => field.kind === "image")
+        .map((field) => field.kind === "image" && [field.label, field.data]),
+    ).toEqual([
+      ["Image 1", "data:image/png;base64,AA=="],
+      ["Image 2", undefined],
+    ]);
   });
 
   it("warns when a title is too long for Hacker News", () => {

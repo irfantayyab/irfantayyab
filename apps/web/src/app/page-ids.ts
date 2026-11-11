@@ -16,6 +16,12 @@ export function diagramImageFile(index: number) {
   return `${diagramAnchor(index)}.png`;
 }
 
+export const imageCopyFolder = "png";
+
+export function imagePngFile(file: string) {
+  return `${imageCopyFolder}/${file.replace(/\.webp$/, "")}.png`;
+}
+
 export function isPageId(id: string) {
   return pageIds.has(id) || diagramId.test(id);
 }

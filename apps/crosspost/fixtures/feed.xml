@@ -38,10 +38,7 @@
 if (statSync(pdf).mtimeMs &amp;#x3C; statSync(log).mtimeMs) {
   skip(`${basename(pdf)} was not written by this build, which failed`);
 }&lt;/code&gt;&lt;/pre&gt;
-&lt;blockquote&gt;
-&lt;p class=&quot;callout-label&quot;&gt;&lt;strong&gt;Note&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;LaTeX Workshop runs the next step of a recipe even when the build fails, which is why the script checks the times itself instead of trusting that it ran after a good build.&lt;/p&gt;
-&lt;/blockquote&gt;
+&lt;blockquote&gt;&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; LaTeX Workshop runs the next step of a recipe even when the build fails, which is why the script checks the times itself instead of trusting that it ran after a good build.&lt;/p&gt;&lt;/blockquote&gt;
 &lt;p&gt;For that to work, the same source has to build the same PDF every time. The build pins the PDF's creation date, so saving without a change leaves the PDF and its hash exactly as they were.&lt;/p&gt;
 &lt;h2 id=&quot;what-it-buys&quot;&gt;What it buys&lt;/h2&gt;
 &lt;p&gt;The resume is served by the site at a URL of its own, and a browser test checks that the file served is byte for byte the one committed. Between that, the claims test and the hash, the site cannot quietly drift from the resume, and the resume cannot quietly drift from its own PDF.&lt;/p&gt;

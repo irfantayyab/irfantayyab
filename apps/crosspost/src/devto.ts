@@ -51,7 +51,11 @@ export function devToArticle(post: FeedPost, published: boolean) {
 
 export function devToClient(apiKey: string, fetcher: typeof fetch = fetch) {
   async function call<T>(method: string, path: string, body?: unknown) {
-    const { ok, status, text } = await request(fetcher, `${devToApi}${path}`, {
+    const {
+      ok,
+      status,
+      body: text,
+    } = await request(fetcher, `${devToApi}${path}`, {
       method,
       headers: {
         "api-key": apiKey,

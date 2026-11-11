@@ -20,12 +20,12 @@ describe("toMarkdown", () => {
     );
   });
 
-  it("writes a callout as a quote with its bold label", () => {
+  it("writes a callout as a quote led by its bold label", () => {
     expect(
       toMarkdown(
-        '<blockquote><p class="callout-label"><strong>Note</strong></p><p>Mind it.</p></blockquote>',
+        "<blockquote><p><strong>Note:</strong> Mind it.</p></blockquote>",
       ),
-    ).toBe("> **Note**\n>\n> Mind it.\n");
+    ).toBe("> **Note:** Mind it.\n");
   });
 
   it("keeps tables, links and headings", () => {

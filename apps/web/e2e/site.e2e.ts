@@ -8,6 +8,8 @@ import {
   diagramAnchor,
   diagramImage,
   diagramImageFile,
+  imageCopyFolder,
+  imagePngFile,
 } from "../src/app/page-ids";
 import { imageBudget } from "../src/image-budget";
 import {
@@ -582,25 +584,80 @@ test.describe("without JavaScript", () => {
     }
   }
 
-  test("the export holds each post's images and diagram images, and no others", () => {
+  test("the export holds each post's images, their PNG copies and its diagram images, and no others", () => {
     const shipped = readdirSync(`${outDir}writing`, {
       recursive: true,
       encoding: "utf8",
     })
       .map((file) => file.replaceAll("\\", "/"))
-      .filter((file) => /\.webp$|(?:^|\/)diagram-[^/]*\.png$/.test(file))
+      .filter(
+        (file) =>
+          /\.webp$|(?:^|\/)diagram-[^/]*\.png$/.test(file) ||
+          file.split("/").at(-2) === imageCopyFolder,
+      )
       .map((file) => `/writing/${file}`)
       .sort();
     expect(shipped).toEqual(
       rich
         .flatMap(({ post, diagrams }) => [
-          ...post.images.map(({ file }) => postFilePath(post.slug, file)),
+          ...post.images.flatMap(({ file }) => [
+            postFilePath(post.slug, file),
+            postFilePath(post.slug, imagePngFile(file)),
+          ]),
           ...Array.from({ length: diagrams }, (_, i) =>
             postFilePath(post.slug, diagramImageFile(i)),
           ),
         ])
         .sort(),
     );
+  });
+
+  test("each post image's PNG copy is the same picture at the same size", async ({
+    page,
+    request,
+  }) => {
+    for (const post of writing.posts) {
+      await page.goto(postPath(post.slug));
+      for (const image of post.images) {
+        const response = await request.get(
+          postFilePath(post.slug, imagePngFile(image.file)),
+        );
+        expect(response.status()).toBe(200);
+        expect(response.headers()["content-type"]).toBe("image/png");
+        const png = await response.body();
+        expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([
+          image.width,
+          image.height,
+        ]);
+        const pixels = await page.evaluate(
+          async ({ webp, copy }) => {
+            const read = async (src: string) => {
+              const element = new Image();
+              element.src = src;
+              await element.decode();
+              const canvas = document.createElement("canvas");
+              canvas.width = element.naturalWidth;
+              canvas.height = element.naturalHeight;
+              const context = canvas.getContext("2d");
+              context?.drawImage(element, 0, 0);
+              return [
+                ...(context?.getImageData(0, 0, canvas.width, canvas.height)
+                  .data ?? []),
+              ];
+            };
+            const [a, b] = await Promise.all([read(webp), read(copy)]);
+            return (
+              a.length === b.length && a.every((value, i) => value === b[i])
+            );
+          },
+          {
+            webp: postFilePath(post.slug, image.file),
+            copy: postFilePath(post.slug, imagePngFile(image.file)),
+          },
+        );
+        expect(pixels).toBe(true);
+      }
+    }
   });
 
   test("an unknown post answers 404", async ({ page }) => {
@@ -1174,8 +1231,7 @@ test.describe("sharing", () => {
       expect(body).not.toMatch(/(?:href|src)="(?!https?:|mailto:)/);
       expect((body.match(/<pre><code/g) ?? []).length).toBe(code.length);
       expect(
-        (body.match(/<blockquote>\s*<p class="callout-label"><strong>/g) ?? [])
-          .length,
+        (body.match(/<blockquote><p><strong>[^<]+:<\/strong>/g) ?? []).length,
       ).toBe(callouts);
       const diagramImages = [
         ...body.matchAll(/<img src="([^"]+\/diagram-\d+\.png)" alt="([^"]*)"/g),

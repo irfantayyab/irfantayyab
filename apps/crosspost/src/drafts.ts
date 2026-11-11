@@ -1,4 +1,9 @@
 import type { FeedPost } from "./feed.ts";
+import {
+  type ArticleImage,
+  withImageMarkers,
+  withPngImages,
+} from "./images.ts";
 import { toMarkdown } from "./markdown.ts";
 
 export const xLimit = 280;
@@ -53,7 +58,9 @@ export function originNote(post: FeedPost) {
 }
 
 export function hashnodeMarkdown(post: FeedPost) {
-  return toMarkdown(post.body);
+  return `${toMarkdown(post.body)}
+_Originally published at [${new URL(post.url).host}](${post.url})._
+`;
 }
 
 type Section = {
@@ -65,11 +72,19 @@ type Section = {
 
 type Field =
   | { kind: "text"; label: string; value: string; note?: string }
-  | { kind: "html"; label: string; html: string };
+  | { kind: "html"; label: string; html: string }
+  | { kind: "image"; label: string; image: ArticleImage; data?: string };
 
 function fieldHtml(sectionId: string, field: Field, index: number) {
   const id = `${sectionId}-${index}`;
   const button = `<button type="button" data-copy="${id}" data-kind="${field.kind}">Copy</button>`;
+  if (field.kind === "image") {
+    const { image } = field;
+    const caption = image.caption
+      ? `<p class="note">Caption: ${image.caption}</p>`
+      : "";
+    return `<div class="field"><div class="label">${escapeHtml(field.label)} ${button} <a href="${escapeHtml(image.src)}">PNG</a></div><p class="note">${image.alt}</p>${caption}<img class="preview" id="${id}" src="${escapeHtml(field.data ?? image.src)}" alt="${image.alt}"></div>`;
+  }
   if (field.kind === "html") {
     return `<div class="field"><div class="label">${escapeHtml(field.label)} ${button}</div><div class="article" id="${id}">${field.html}</div></div>`;
   }
@@ -88,9 +103,12 @@ function sectionHtml(section: Section) {
   return `<section id="${section.id}"><h2>${escapeHtml(section.heading)}</h2><ol>${steps}</ol>${fields}</section>`;
 }
 
-export function draftSections(post: FeedPost) {
+export function draftSections(
+  post: FeedPost,
+  imageData: ReadonlyMap<string, string> = new Map(),
+) {
   const url = escapeHtml(post.url);
-  const article = `${post.body}${originNote(post)}`;
+  const linkedIn = withImageMarkers(post.body);
   const tagLabels = post.tags.map((tag) => tag.label).join(", ");
   const x = xPost(post);
   const sections: Section[] = [
@@ -99,12 +117,12 @@ export function draftSections(post: FeedPost) {
       heading: "Medium",
       steps: [
         "Write a story, paste the title, then the article below it.",
-        `In the story's settings, under Advanced settings, set the canonical link to <code>${url}</code>.`,
+        `In the story's settings, under Advanced settings, set the canonical link to <code>${url}</code>. Medium then ends the story with where it was first published.`,
         "Add the tags, then publish.",
       ],
       fields: [
         { kind: "text", label: "Title", value: post.title },
-        { kind: "html", label: "Article", html: article },
+        { kind: "html", label: "Article", html: withPngImages(post.body) },
         { kind: "text", label: "Tags", value: tagLabels },
       ],
     },
@@ -113,11 +131,24 @@ export function draftSections(post: FeedPost) {
       heading: "LinkedIn article",
       steps: [
         "Write an article, paste the title and the article.",
+        "LinkedIn drops images pasted with the article, so each one is marked <code>[Image N: …]</code>. For each, click its Copy image below, select the marker in LinkedIn and paste. If LinkedIn refuses the image, download it from its PNG link and upload it there instead. Add its caption, if it has one.",
         `Upload the card as the cover: <a href="${escapeHtml(post.card)}">${escapeHtml(post.card)}</a>. LinkedIn has no canonical link, so the article ends with the note that it was first published on the site.`,
       ],
       fields: [
         { kind: "text", label: "Title", value: post.title },
-        { kind: "html", label: "Article", html: article },
+        {
+          kind: "html",
+          label: "Article",
+          html: `${linkedIn.html}${originNote(post)}`,
+        },
+        ...linkedIn.images.map((image): Field => ({
+          kind: "image",
+          label: `Image ${image.number}`,
+          image,
+          ...(imageData.has(image.src)
+            ? { data: imageData.get(image.src) }
+            : {}),
+        })),
       ],
     },
     {
@@ -201,6 +232,7 @@ textarea { width: 100%; box-sizing: border-box; font: 14px/1.4 ui-monospace, mon
 .article { border: 1px solid #ddd; padding: 0 1rem; max-height: 28rem; overflow: auto; }
 .article img { max-width: 100%; }
 .article pre { overflow: auto; background: #f6f6f6; padding: 0.5rem; }
+.preview { display: block; max-width: 100%; max-height: 16rem; border: 1px solid #ddd; }
 button { font: inherit; font-size: 14px; margin-left: 0.5rem; }
 `;
 
@@ -209,7 +241,12 @@ for (const button of document.querySelectorAll("[data-copy]")) {
   button.addEventListener("click", async () => {
     const target = document.getElementById(button.dataset.copy);
     try {
-      if (button.dataset.kind === "html") {
+      if (button.dataset.kind === "image") {
+        const blob = await (await fetch(target.src)).blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob.slice(0, blob.size, "image/png") }),
+        ]);
+      } else if (button.dataset.kind === "html") {
         await navigator.clipboard.write([
           new ClipboardItem({
             "text/html": new Blob([target.innerHTML], { type: "text/html" }),
@@ -228,8 +265,11 @@ for (const button of document.querySelectorAll("[data-copy]")) {
 }
 `;
 
-export function draftsPage(post: FeedPost) {
-  const sections = draftSections(post);
+export function draftsPage(
+  post: FeedPost,
+  imageData: ReadonlyMap<string, string> = new Map(),
+) {
+  const sections = draftSections(post, imageData);
   const nav = sections
     .map(
       (section) =>
