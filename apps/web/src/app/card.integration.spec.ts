@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { fontPackageDir, loadFonts, renderCard, unprintable } from "./card";
+import { woffCodePoints } from "./woff-glyphs";
 
 describe("the card's fonts", () => {
   it("draw the Latin text and punctuation a title uses", async () => {
@@ -20,6 +21,23 @@ describe("the card's fonts", () => {
       "世",
       "🚀",
     ]);
+  });
+
+  it("all carry the same combining marks, since a letter and its accents are drawn from one file", async () => {
+    const { options } = await loadFonts();
+    const files = options?.fonts ?? [];
+    expect(files.length).toBeGreaterThan(1);
+    const marks = files.map(({ name, weight, data }) => ({
+      file: `${name} ${weight}`,
+      marks: [...woffCodePoints(new Uint8Array(data))]
+        .filter((code) => code >= 0x300 && code <= 0x36f)
+        .sort((a, b) => a - b),
+    }));
+    const [first] = marks;
+    expect(first?.marks.length).toBeGreaterThan(0);
+    for (const { file, marks: own } of marks) {
+      expect(own, file).toEqual(first?.marks);
+    }
   });
 
   it("are the same version as the site's variable font", async () => {
