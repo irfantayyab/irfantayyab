@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { feedPost } from "./testing/post.ts";
 import {
+  compactBlocks,
   draftSections,
+  flatQuotes,
   draftsPage,
   escapeHtml,
   linkedInPost,
@@ -58,6 +60,36 @@ describe("originNote", () => {
     expect(originNote(feedPost())).toBe(
       '<p><em>Originally published at <a href="https://a.dev/writing/a-post">a.dev</a>.</em></p>',
     );
+  });
+});
+
+describe("compactBlocks", () => {
+  it("drops the line breaks after a block, keeping the spaces inside one", () => {
+    expect(
+      compactBlocks(
+        "<p>A <strong>b</strong>\n<a>c</a></p>\n<blockquote><p>Q</p>\n</blockquote>\n<pre><code>x\n</code></pre>\n<p>D</p>",
+      ),
+    ).toBe(
+      "<p>A <strong>b</strong>\n<a>c</a></p><blockquote><p>Q</p></blockquote><pre><code>x\n</code></pre><p>D</p>",
+    );
+  });
+});
+
+describe("flatQuotes", () => {
+  it("makes each paragraph of a quote a quote of its own, as Medium writes them", () => {
+    expect(
+      flatQuotes(
+        "<p>Before.</p><blockquote><p><strong>Note:</strong> One.</p><p>Two.</p></blockquote><p>After.</p>",
+      ),
+    ).toBe(
+      "<p>Before.</p><blockquote><strong>Note:</strong> One.</blockquote><blockquote>Two.</blockquote><p>After.</p>",
+    );
+  });
+
+  it("leaves a quote holding more than paragraphs as it is", () => {
+    const html =
+      "<blockquote><p><strong>Tip:</strong></p><ul><li>One</li></ul></blockquote>";
+    expect(flatQuotes(html)).toBe(html);
   });
 });
 

@@ -53,6 +53,22 @@ export function linkedInPost(post: FeedPost) {
   return `${post.title}\n\n${post.description}\n\n${post.url}`;
 }
 
+const blockEnd =
+  /(<\/(?:p|blockquote|figure|pre|ul|ol|li|h[1-6]|table|thead|tbody|tr)>)\s+(?=<)/g;
+
+export function compactBlocks(html: string) {
+  return html.replace(blockEnd, "$1");
+}
+
+const quote =
+  /<blockquote>((?:<p>(?:(?!<\/?p>|<\/?blockquote>)[\s\S])*<\/p>)+)<\/blockquote>/g;
+
+export function flatQuotes(html: string) {
+  return html.replace(quote, (_, paragraphs: string) =>
+    paragraphs.replace(/<p>([\s\S]*?)<\/p>/g, "<blockquote>$1</blockquote>"),
+  );
+}
+
 export function originNote(post: FeedPost) {
   return `<p><em>Originally published at <a href="${escapeHtml(post.url)}">${escapeHtml(new URL(post.url).host)}</a>.</em></p>`;
 }
@@ -83,7 +99,7 @@ function fieldHtml(sectionId: string, field: Field, index: number) {
     const caption = image.caption
       ? `<p class="note">Caption: ${image.caption}</p>`
       : "";
-    return `<div class="field"><div class="label">${escapeHtml(field.label)} ${button} <a href="${escapeHtml(image.src)}">PNG</a></div><p class="note">${image.alt}</p>${caption}<img class="preview" id="${id}" src="${escapeHtml(field.data ?? image.src)}" alt="${image.alt}"></div>`;
+    return `<div class="field"><div class="label">${escapeHtml(field.label)} ${button} <a href="${escapeHtml(image.src)}">PNG</a></div><p class="note">Alt text: ${image.alt}</p>${caption}<img class="preview" id="${id}" src="${escapeHtml(field.data ?? image.src)}" alt="${image.alt}"></div>`;
   }
   if (field.kind === "html") {
     return `<div class="field"><div class="label">${escapeHtml(field.label)} ${button}</div><div class="article" id="${id}">${field.html}</div></div>`;
@@ -108,7 +124,7 @@ export function draftSections(
   imageData: ReadonlyMap<string, string> = new Map(),
 ) {
   const url = escapeHtml(post.url);
-  const linkedIn = withImageMarkers(post.body);
+  const linkedIn = withImageMarkers(compactBlocks(post.body));
   const tagLabels = post.tags.map((tag) => tag.label).join(", ");
   const x = xPost(post);
   const sections: Section[] = [
@@ -122,7 +138,11 @@ export function draftSections(
       ],
       fields: [
         { kind: "text", label: "Title", value: post.title },
-        { kind: "html", label: "Article", html: withPngImages(post.body) },
+        {
+          kind: "html",
+          label: "Article",
+          html: withPngImages(flatQuotes(compactBlocks(post.body))),
+        },
         { kind: "text", label: "Tags", value: tagLabels },
       ],
     },
@@ -131,7 +151,7 @@ export function draftSections(
       heading: "LinkedIn article",
       steps: [
         "Write an article, paste the title and the article.",
-        "LinkedIn drops images pasted with the article, so each one is marked <code>[Image N: …]</code>. For each, click its Copy image below, select the marker in LinkedIn and paste. If LinkedIn refuses the image, download it from its PNG link and upload it there instead. Add its caption, if it has one.",
+        "LinkedIn drops images pasted with the article, so each one is marked <code>[Image N: …]</code>. For each, click its Copy image below, select the marker in LinkedIn and paste. If LinkedIn refuses the image, download it from its PNG link and upload it there instead. Set its alt text in the image's settings, and add its caption, if it has one.",
         `Upload the card as the cover: <a href="${escapeHtml(post.card)}">${escapeHtml(post.card)}</a>. LinkedIn has no canonical link, so the article ends with the note that it was first published on the site.`,
       ],
       fields: [
