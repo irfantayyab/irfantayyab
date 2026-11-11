@@ -1,0 +1,29 @@
+@page {
+  size: 1280px 720px;
+  margin: 0;
+}
+
+.pdf-page {
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  break-after: page;
+}
+
+.pdf-page:last-child {
+  break-after: auto;
+}
+
+.pdf-tint {
+  background-color: var(--code);
+}
+
+.pdf-shot {
+  border: 1px solid var(--underline);
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 32px -12px rgb(34 33 31 / 0.25);
+}
+
+.pdf-rule {
+  border-left: 1px solid var(--underline);
+}

@@ -1,8 +1,10 @@
 import Image from "next/image";
+import { projectScreenshots } from "./project-screenshots";
 import type { Project } from "./projects";
 
 export function ProjectBlock({ project }: { project: Project }) {
-  const { name, summary, problem, part, links, screenshot } = project;
+  const { name, summary, problem, part, links } = project;
+  const screenshot = projectScreenshots[name];
   return (
     <article>
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
