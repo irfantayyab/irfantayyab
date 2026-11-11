@@ -124,7 +124,7 @@ function checkFence(node: MarkdownNode, context: Context) {
     return;
   }
   const lines = (node.value ?? "").split("\n").length;
-  for (const problem of checkFenceMeta(meta, lines, isCodeLanguage)) {
+  for (const problem of checkFenceMeta(meta, lines, lang, isCodeLanguage)) {
     report(context.problems, line, problem);
   }
 }

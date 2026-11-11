@@ -204,7 +204,7 @@ describe("parseMarkdown", () => {
       ).toEqual([]);
       expect(
         parseMarkdown('Text.\n\n```js titel="a.js"\na();\n```\n').problems,
-      ).toEqual(['line 3: "titel=" is no code block option']);
+      ).toEqual(['line 3: "titel" is no code block option']);
       expect(
         parseMarkdown("Text.\n\n```js {3}\na();\nb();\n```\n").problems,
       ).toEqual(['line 3: "{3}" points past the block\'s last line, line 2']);
