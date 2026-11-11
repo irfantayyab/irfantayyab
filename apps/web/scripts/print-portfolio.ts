@@ -31,7 +31,12 @@ async function isFile(file: string) {
 }
 
 async function fileFor(pathname: string) {
-  const decoded = decodeURIComponent(pathname);
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return undefined;
+  }
   const candidates = decoded.endsWith("/")
     ? [`${decoded}index.html`]
     : [decoded, `${decoded}.html`, `${decoded}/index.html`];
@@ -45,10 +50,12 @@ async function fileFor(pathname: string) {
 }
 
 const missing: string[] = [];
+const foreign: string[] = [];
 
 async function serve(route: Route) {
   const url = new URL(route.request().url());
   if (url.origin !== siteUrl) {
+    foreign.push(url.href);
     await route.abort("blockedbyclient");
     return;
   }
@@ -92,8 +99,24 @@ try {
       .filter((font) => font.status === "error")
       .map((font) => font.family),
   );
+  const crowded = await page.evaluate(() =>
+    [...document.querySelectorAll(".pdf-page")].flatMap((section, index) => {
+      const footer = section.querySelector(":scope > footer");
+      const limit = footer
+        ? footer.getBoundingClientRect().top
+        : section.getBoundingClientRect().bottom;
+      const over = [...section.querySelectorAll("h1, h2, p, li, img")].some(
+        (element) =>
+          !element.closest("footer, .pdf-tint") &&
+          element.getBoundingClientRect().bottom > limit + 0.5,
+      );
+      return over ? [index + 1] : [];
+    }),
+  );
   const problems = [
     ...missing.map((pathname) => `${pathname} is not in out/`),
+    ...foreign.map((href) => `${href} is not on ${siteUrl}`),
+    ...crowded.map((number) => `page ${number} runs into its footer`),
     ...broken.map((src) => `the image ${src} did not load`),
     ...fonts.map((family) => `the font ${family} did not load`),
   ];

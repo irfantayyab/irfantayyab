@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { experienceLinks } from "@/portfolio/experience";
 import { introLine } from "@/portfolio/intro";
-import { portfolioPdfPath, portfolioRepoUrl } from "@/portfolio/links";
+import {
+  portfolioPdfPath,
+  portfolioRepoUrl,
+  resumePath,
+} from "@/portfolio/links";
 import { ProjectBlock } from "@/portfolio/project-block";
 import { projects } from "@/portfolio/projects";
 import { resume } from "@/resume/claims";
@@ -19,7 +23,7 @@ const contactLinks = [
   { label: "GitHub", url: resume.links.github.url },
   { label: "LinkedIn", url: resume.links.linkedin.url },
   { label: resume.email, url: `mailto:${resume.email}` },
-  { label: "Resume (PDF)", url: "/resume.pdf" },
+  { label: "Resume (PDF)", url: resumePath },
   { label: "Portfolio (PDF)", url: portfolioPdfPath },
 ];
 
@@ -47,7 +51,7 @@ export default async function HomePage() {
           tests, and checks that pass before anything ships. This site is built
           that way, in the open. Its source is on{" "}
           <a href={portfolioRepoUrl}>GitHub</a>, and the{" "}
-          <a href="/resume.pdf">resume is a PDF</a> to read or save.
+          <a href={resumePath}>resume is a PDF</a> to read or save.
         </p>
       </div>
 
