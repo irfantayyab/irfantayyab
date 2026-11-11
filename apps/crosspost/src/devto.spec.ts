@@ -57,7 +57,7 @@ describe("devToArticle", () => {
       canonical_url: "https://a.dev/writing/a-post",
       description: "What the post is about.",
       main_image: "https://a.dev/writing/a-post/og.png",
-      tags: "testing, nextjs",
+      tags: ["testing", "nextjs"],
     });
   });
 
@@ -66,7 +66,12 @@ describe("devToArticle", () => {
       slug,
       label: slug,
     }));
-    expect(devToArticle(feedPost({ tags }), false).tags).toBe("a, b, c, d");
+    expect(devToArticle(feedPost({ tags }), false).tags).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+    ]);
   });
 });
 

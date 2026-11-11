@@ -45,10 +45,7 @@ export function devToArticle(post: FeedPost, published: boolean) {
     canonical_url: post.url,
     description: post.description,
     main_image: post.card,
-    tags: post.tags
-      .slice(0, devToTagLimit)
-      .map((tag) => tag.slug)
-      .join(", "),
+    tags: post.tags.slice(0, devToTagLimit).map((tag) => tag.slug),
   };
 }
 
