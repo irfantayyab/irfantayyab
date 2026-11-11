@@ -62,11 +62,11 @@ function Cover() {
     return screenshot ? [screenshot] : [];
   });
   return (
-    <section className="pdf-page grid grid-cols-[1fr_500px] bg-page">
+    <section className="pdf-page grid grid-cols-[1fr_420px] bg-page">
       <div className="flex flex-col justify-between py-18 pr-12 pl-20">
         <Label>Portfolio</Label>
         <div>
-          <h1 className="text-[88px]/none font-semibold">{resume.name}</h1>
+          <h1 className="text-[80px]/none font-semibold">{resume.name}</h1>
           <p className="mt-5 text-3xl text-muted">{resume.headline}</p>
           <p className="mt-10 max-w-140 text-xl/relaxed">{introLine}</p>
         </div>
@@ -87,8 +87,8 @@ function Cover() {
             src={shot.image}
             alt=""
             loading="eager"
-            className="pdf-shot absolute w-100"
-            style={{ top: 64 + index * 168, left: 36 + (index % 2) * 28 }}
+            className="pdf-shot absolute w-88"
+            style={{ top: 48 + index * 200, left: 20 + (index % 2) * 20 }}
           />
         ))}
       </div>
@@ -156,7 +156,7 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
   return (
     <Page number={index + 2}>
       {screenshot ? (
-        <div className="grid h-full grid-cols-[1fr_520px] gap-14 px-20 pt-16 pb-24">
+        <div className="grid h-full grid-cols-[1fr_440px] gap-12 px-20 pt-16 pb-24">
           <div className="flex flex-col">
             {heading}
             <div className="mt-6">
@@ -175,7 +175,7 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
           </div>
         </div>
       ) : (
-        <div className="grid h-full grid-cols-[420px_1fr] gap-16 px-20 pt-16 pb-24">
+        <div className="grid h-full grid-cols-[360px_1fr] gap-16 px-20 pt-16 pb-24">
           <div className="flex flex-col gap-8">
             <div>{heading}</div>
             <Stack items={project.stack} />
@@ -232,7 +232,7 @@ function ExperiencePage() {
 function ContactPage() {
   return (
     <Page number={pageCount}>
-      <div className="grid h-full grid-cols-[1fr_1fr] gap-16 px-20 pt-16 pb-24">
+      <div className="grid h-full grid-cols-[2fr_3fr] gap-16 px-20 pt-16 pb-24">
         <div className="flex flex-col justify-center">
           <Label>Contact</Label>
           <h2 className="mt-3 text-6xl/tight font-semibold">{resume.name}</h2>
@@ -242,7 +242,7 @@ function ContactPage() {
           {contacts.map(({ label, url }) => (
             <li key={label}>
               <Label>{label}</Label>
-              <a href={url} className="text-2xl">
+              <a href={url} className="text-xl whitespace-nowrap">
                 {shown(url)}
               </a>
             </li>

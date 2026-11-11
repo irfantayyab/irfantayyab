@@ -893,7 +893,7 @@ test.describe("the portfolio PDF", () => {
     );
   });
 
-  test("has a cover, a page per project, the experience and the contact, each 16:9", async ({
+  test("has a cover, a page per project, the experience and the contact, each A4 landscape", async ({
     request,
   }) => {
     const { pdf } = await loadPdf(request);
@@ -902,7 +902,8 @@ test.describe("the portfolio PDF", () => {
       const { width, height } = (await pdf.getPage(number)).getViewport({
         scale: 1,
       });
-      expect([width, height], `page ${number}`).toEqual([960, 540]);
+      expect(width, `page ${number}'s width`).toBeCloseTo(841.89, 0);
+      expect(height, `page ${number}'s height`).toBeCloseTo(595.28, 0);
     }
   });
 

@@ -108,13 +108,16 @@ try {
   const crowded = await page.evaluate(() =>
     [...document.querySelectorAll(".pdf-page")].flatMap((section, index) => {
       const footer = section.querySelector(":scope > footer");
-      const limit = footer
-        ? footer.getBoundingClientRect().top
-        : section.getBoundingClientRect().bottom;
-      const over = [...section.querySelectorAll("h1, h2, p, li, img")].some(
-        (element) =>
-          !element.closest("footer, .pdf-tint") &&
-          element.getBoundingClientRect().bottom > limit + 0.5,
+      const page = section.getBoundingClientRect();
+      const limit = footer ? footer.getBoundingClientRect().top : page.bottom;
+      const over = [...section.querySelectorAll("h1, h2, p, li, a, img")].some(
+        (element) => {
+          const box = element.getBoundingClientRect();
+          return (
+            !element.closest("footer, .pdf-tint") &&
+            (box.bottom > limit + 0.5 || box.right > page.right + 0.5)
+          );
+        },
       );
       return over ? [index + 1] : [];
     }),
@@ -122,7 +125,9 @@ try {
   const problems = [
     ...missing.map((pathname) => `${pathname} is not in out/`),
     ...foreign.map((href) => `${href} is not on ${siteUrl}`),
-    ...crowded.map((number) => `page ${number} runs into its footer`),
+    ...crowded.map(
+      (number) => `page ${number} runs into its footer or past its edge`,
+    ),
     ...broken.map((src) => `the image ${src} did not load`),
     ...fonts.failed.map((family) => `the font ${family} did not load`),
     ...(fonts.loaded ? [] : ["no font loaded from out/"]),
