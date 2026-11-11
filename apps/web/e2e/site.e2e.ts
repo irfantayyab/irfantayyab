@@ -9,7 +9,7 @@ import {
   siteCardPath,
   siteDescription,
 } from "../src/app/page-metadata";
-import { pageColors } from "../src/app/theme";
+import { pageColors, textColors } from "../src/app/theme";
 import { resume } from "../src/resume/claims";
 import { resumePdfPath } from "../src/resume/source";
 import { absoluteUrl, siteUrl } from "../src/site";
@@ -808,6 +808,25 @@ test.describe("with JavaScript", () => {
   }
 });
 
+for (const { colorScheme } of themes) {
+  test(`the ${colorScheme} theme's text colours are the ones the cards and diagrams use`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto("/");
+    const tokens = await page.evaluate(() => {
+      const style = getComputedStyle(document.documentElement);
+      return Object.fromEntries(
+        ["ink", "muted", "code"].map((name) => [
+          name,
+          style.getPropertyValue(`--${name}`).trim(),
+        ]),
+      );
+    });
+    expect(tokens).toEqual(textColors[colorScheme]);
+  });
+}
+
 test("_redirects holds /home and every redirect of the writing", () => {
   expect(redirects).toEqual([
     { from: "/home", to: "/", status: "301" },
@@ -969,6 +988,7 @@ test.describe("sharing", () => {
   }) => {
     const response = await request.get(feedPath);
     expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toBe("application/xml");
     const xml = await response.text();
     const feed = await page.evaluate((source) => {
       const doc = new DOMParser().parseFromString(source, "application/xml");
@@ -1000,9 +1020,10 @@ test.describe("sharing", () => {
       expect(body).not.toMatch(/expressive-code|post-code|post-diagram|<svg/);
       expect(body).not.toMatch(/(?:href|src)="(?!https?:|mailto:)/);
       expect((body.match(/<pre><code/g) ?? []).length).toBe(code.length);
-      expect((body.match(/<blockquote>/g) ?? []).length).toBeGreaterThanOrEqual(
-        callouts,
-      );
+      expect(
+        (body.match(/<blockquote>\s*<p class="callout-label"><strong>/g) ?? [])
+          .length,
+      ).toBe(callouts);
       expect(body.split("The diagram is on the site.").length - 1).toBe(
         diagrams,
       );

@@ -6,7 +6,7 @@ import {
   type RenderOptions,
 } from "mermaid-isomorphic";
 import { diagramIdPrefix } from "@/app/page-ids";
-import { pageColors } from "@/app/theme";
+import { pageColors, textColors } from "@/app/theme";
 
 export type RenderedDiagram =
   { light: string; dark: string; width: number } | { error: string };
@@ -29,20 +29,20 @@ const schemes = {
   light: {
     darkMode: false,
     background: pageColors.light,
-    primaryColor: "#f4f3f0",
-    primaryTextColor: "#22211f",
-    primaryBorderColor: "#6b6a65",
-    lineColor: "#6b6a65",
-    textColor: "#22211f",
+    primaryColor: textColors.light.code,
+    primaryTextColor: textColors.light.ink,
+    primaryBorderColor: textColors.light.muted,
+    lineColor: textColors.light.muted,
+    textColor: textColors.light.ink,
   },
   dark: {
     darkMode: true,
     background: pageColors.dark,
-    primaryColor: "#262522",
-    primaryTextColor: "#edece8",
-    primaryBorderColor: "#a3a19b",
-    lineColor: "#a3a19b",
-    textColor: "#edece8",
+    primaryColor: textColors.dark.code,
+    primaryTextColor: textColors.dark.ink,
+    primaryBorderColor: textColors.dark.muted,
+    lineColor: textColors.dark.muted,
+    textColor: textColors.dark.ink,
   },
 } as const;
 

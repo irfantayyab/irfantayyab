@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fitTitle, renderCard, titleSize, unprintable } from "./card";
+import { fitTitle, titleSize, unprintable } from "./card";
 
 describe("fitTitle", () => {
   it("keeps a title that fits", () => {
@@ -30,21 +30,13 @@ describe("titleSize", () => {
 });
 
 describe("unprintable", () => {
-  it("passes the Latin text and punctuation a title uses", () => {
-    expect(
-      unprintable("Café, naïve — “quoted” · 10 € – Łódź → Next.js™"),
-    ).toEqual([]);
+  const glyphs = new Set([..."Café "].map((char) => char.codePointAt(0) ?? -1));
+
+  it("passes text whose every character the font draws", () => {
+    expect(unprintable("Café Café", glyphs)).toEqual([]);
   });
 
-  it("names the characters Newsreader has no glyph for", () => {
-    expect(unprintable("Hello 世界 🚀")).toEqual(["世", "界", "🚀"]);
-  });
-});
-
-describe("renderCard", () => {
-  it("refuses text the card cannot draw, before it would fetch a font", async () => {
-    await expect(
-      renderCard({ title: "Hello 世界", subtitle: "", footer: "" }),
-    ).rejects.toThrow(/"世", "界"/);
+  it("names each character the font cannot draw, once", () => {
+    expect(unprintable("Café → Café →", glyphs)).toEqual(["→"]);
   });
 });

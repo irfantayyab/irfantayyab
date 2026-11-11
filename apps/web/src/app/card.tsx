@@ -2,7 +2,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
 import { cardSize } from "./page-metadata";
-import { lightText, pageColors } from "./theme";
+import { pageColors, textColors } from "./theme";
+import { woffCodePoints } from "./woff-glyphs";
 
 const fontFamily = "Newsreader";
 
@@ -13,8 +14,6 @@ const fontFiles = [
   { subset: "latin-ext", weight: 600 },
 ] as const;
 
-const printable = /^[ -ɏḀ-ỿ -⁯₠-⃏™←-↓−∕]*$/u;
-
 const titleLimit = 110;
 
 const titleSizes = [
@@ -23,26 +22,57 @@ const titleSizes = [
   { upTo: Infinity, size: 54 },
 ];
 
-let fonts: Promise<ConstructorParameters<typeof ImageResponse>[1]> | undefined;
+export const fontPackageDir = path.join(
+  process.cwd(),
+  "node_modules",
+  "@fontsource",
+  "newsreader",
+);
 
-function loadFonts() {
-  fonts ??= Promise.all(
+type Fonts = {
+  options: ConstructorParameters<typeof ImageResponse>[1];
+  glyphs: ReadonlySet<number>;
+};
+
+let fonts: Promise<Fonts> | undefined;
+
+async function readFonts(): Promise<Fonts> {
+  const files = await Promise.all(
     fontFiles.map(async ({ subset, weight }) => ({
       name: fontFamily,
       weight,
       style: "normal" as const,
       data: await readFile(
         path.join(
-          process.cwd(),
-          "node_modules",
-          "@fontsource",
-          "newsreader",
+          fontPackageDir,
           "files",
           `newsreader-${subset}-${weight}-normal.woff`,
         ),
       ),
     })),
-  ).then((files) => ({ ...cardSize, fonts: files }));
+  );
+  const weights = [...new Set(files.map(({ weight }) => weight))].map(
+    (weight) =>
+      new Set(
+        files
+          .filter((file) => file.weight === weight)
+          .flatMap(({ data }) => [...woffCodePoints(data)]),
+      ),
+  );
+  const [first = new Set<number>(), ...rest] = weights;
+  return {
+    options: { ...cardSize, fonts: files },
+    glyphs: new Set(
+      [...first].filter((code) => rest.every((set) => set.has(code))),
+    ),
+  };
+}
+
+export function loadFonts() {
+  fonts ??= readFonts().catch((error: unknown) => {
+    fonts = undefined;
+    throw error;
+  });
   return fonts;
 }
 
@@ -59,8 +89,12 @@ export function titleSize(title: string) {
   return titleSizes.find(({ upTo }) => title.length <= upTo)?.size ?? 54;
 }
 
-export function unprintable(text: string) {
-  return [...text].filter((char) => !printable.test(char));
+export function unprintable(text: string, glyphs: ReadonlySet<number>) {
+  return [
+    ...new Set(
+      [...text].filter((char) => !glyphs.has(char.codePointAt(0) ?? -1)),
+    ),
+  ];
 }
 
 type Card = {
@@ -70,14 +104,15 @@ type Card = {
 };
 
 export async function renderCard({ title, subtitle, footer }: Card) {
-  const missing = unprintable(`${title}${subtitle}${footer}`);
+  const { options, glyphs } = await loadFonts();
+  const fitted = fitTitle(title);
+  const missing = unprintable(`${fitted}${subtitle}${footer}`, glyphs);
   if (missing.length > 0) {
     throw new Error(
       `A card cannot draw ${missing.map((char) => `"${char}"`).join(", ")}: Newsreader has no glyph for it, and the renderer would fetch a font from Google`,
     );
   }
-  const fitted = fitTitle(title);
-  const image = new ImageResponse(
+  return new ImageResponse(
     <div
       style={{
         width: "100%",
@@ -87,7 +122,7 @@ export async function renderCard({ title, subtitle, footer }: Card) {
         justifyContent: "space-between",
         padding: 80,
         backgroundColor: pageColors.light,
-        color: lightText.ink,
+        color: textColors.light.ink,
         fontFamily,
       }}
     >
@@ -102,13 +137,14 @@ export async function renderCard({ title, subtitle, footer }: Card) {
         >
           {fitted}
         </div>
-        <div style={{ fontSize: 36, color: lightText.muted }}>{subtitle}</div>
+        <div style={{ fontSize: 36, color: textColors.light.muted }}>
+          {subtitle}
+        </div>
       </div>
-      <div style={{ fontSize: 32, color: lightText.muted }}>{footer}</div>
+      <div style={{ fontSize: 32, color: textColors.light.muted }}>
+        {footer}
+      </div>
     </div>,
-    await loadFonts(),
+    options,
   );
-  return new Response(await image.arrayBuffer(), {
-    headers: { "Content-Type": "image/png" },
-  });
 }
