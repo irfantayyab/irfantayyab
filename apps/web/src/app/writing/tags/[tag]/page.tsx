@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { pageMetadata } from "@/app/page-metadata";
 import { loadWriting } from "@/writing/load";
 import { PostList } from "@/writing/post-list";
+import { tagPath } from "@/writing/writing";
 
 export const dynamicParams = false;
 
@@ -27,10 +29,11 @@ export async function generateMetadata({
   params,
 }: PageProps<"/writing/tags/[tag]">): Promise<Metadata> {
   const { tag } = await findTag((await params).tag);
-  return {
+  return pageMetadata({
+    path: tagPath(tag.slug),
     title: `Writing on ${tag.label}`,
     description: `Everything I have written on ${tag.label}, newest first.`,
-  };
+  });
 }
 
 export default async function TagPage({

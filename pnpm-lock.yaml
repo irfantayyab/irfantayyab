@@ -205,9 +205,15 @@ importers:
       '@fontsource-variable/newsreader':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/newsreader':
+        specifier: 5.3.0
+        version: 5.3.0
       expressive-code:
         specifier: 0.44.3
         version: 0.44.3
+      hast-util-to-html:
+        specifier: 9.0.6
+        version: 9.0.6
       hast-util-to-jsx-runtime:
         specifier: ^2.3.7
         version: 2.3.7(supports-color@7.2.0)
@@ -747,6 +753,9 @@ packages:
 
   '@fontsource-variable/newsreader@5.3.0':
     resolution: {integrity: sha512-rrzYi43qMpbzwuFtf9OkWH8sxAPVPcQQQEwXpPtwaKYeJ8yVg5aLs5kawmo1f2Q1t1M38TLmEKCkGVDsYwgdFw==}
+
+  '@fontsource/newsreader@5.3.0':
+    resolution: {integrity: sha512-AFR6ZKY89GNL+9qBI2P2+66NhD5bhOj/v6fsLnFYLM4E0JnMB1yKb+Ro8cA64i1hwAWoBfTq5CHJGWH1toLDkw==}
 
   '@fortawesome/fontawesome-free@6.7.2':
     resolution: {integrity: sha512-JUOtgFW6k9u4Y+xeIaEiLr3+cjoUPiAuLXoyKOJSia6Duzb7pq+A76P9ZdPDoAoxHdHzq6gE9/jKBGXlZT8FbA==}
@@ -4429,6 +4438,8 @@ snapshots:
       '@expressive-code/core': 0.44.3
 
   '@fontsource-variable/newsreader@5.3.0': {}
+
+  '@fontsource/newsreader@5.3.0': {}
 
   '@fortawesome/fontawesome-free@6.7.2': {}
 

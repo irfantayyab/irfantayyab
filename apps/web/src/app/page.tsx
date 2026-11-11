@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { experienceLinks } from "@/portfolio/experience";
 import { portfolioRepoUrl } from "@/portfolio/links";
@@ -6,6 +7,12 @@ import { projects } from "@/portfolio/projects";
 import { resume } from "@/resume/claims";
 import { loadWriting } from "@/writing/load";
 import { PostList } from "@/writing/post-list";
+import { pageMetadata, siteDescription } from "./page-metadata";
+
+export const metadata: Metadata = pageMetadata({
+  path: "/",
+  description: siteDescription,
+});
 
 const contactLinks = [
   { label: "GitHub", url: resume.links.github.url },

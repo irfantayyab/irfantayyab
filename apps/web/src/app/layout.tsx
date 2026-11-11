@@ -1,18 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { resume } from "@/resume/claims";
+import { siteUrl } from "@/site";
 import { newsreader } from "./fonts";
 import "./globals.css";
 import { Nav } from "./nav";
 import { mainId } from "./page-ids";
+import { feedLinks, siteDescription } from "./page-metadata";
 import { pageColors } from "./theme";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: resume.name,
     template: `%s · ${resume.name}`,
   },
-  description: `${resume.name}, ${resume.headline}`,
+  description: siteDescription,
+  alternates: { types: feedLinks },
 };
 
 export const viewport: Viewport = {

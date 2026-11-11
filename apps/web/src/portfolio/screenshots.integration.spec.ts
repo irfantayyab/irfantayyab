@@ -8,10 +8,13 @@ const screenshotsDir = path.join(import.meta.dirname, "screenshots");
 const imageFile = /\.(png|jpe?g|gif|webp|avif|bmp|tiff?)$/i;
 
 async function images() {
-  const files = await readdir(srcDir, { recursive: true, encoding: "utf8" });
-  return files
-    .filter((file) => imageFile.test(file))
-    .map((file) => path.join(srcDir, file));
+  const entries = await readdir(srcDir, {
+    recursive: true,
+    withFileTypes: true,
+  });
+  return entries
+    .filter((entry) => entry.isFile() && imageFile.test(entry.name))
+    .map((entry) => path.join(entry.parentPath, entry.name));
 }
 
 describe("the images in the site's source", () => {

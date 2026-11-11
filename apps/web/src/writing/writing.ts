@@ -95,6 +95,10 @@ export function postFilePath(slug: string, file: string) {
   return `${postPath(slug)}/${file}`;
 }
 
+export function postCardPath(slug: string) {
+  return postFilePath(slug, "og.png");
+}
+
 function webpSize(data: Uint8Array) {
   try {
     const { type, width, height } = imageSize(data);
