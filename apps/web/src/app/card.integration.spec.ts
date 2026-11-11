@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fontPackageDir, loadFonts, renderCard, unprintable } from "./card";
 
 describe("the card's fonts", () => {
@@ -58,5 +58,31 @@ describe("renderCard", () => {
     const png = Buffer.from(await response.arrayBuffer());
     expect(png.subarray(1, 4).toString("latin1")).toBe("PNG");
     expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+  });
+
+  it("draws every letter it accepts from its own fonts, fetching none", async () => {
+    const fetched: string[] = [];
+    const realFetch = globalThis.fetch;
+    const spy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation((input, init) => {
+        const url =
+          input instanceof Request ? input.url : new URL(String(input)).href;
+        fetched.push(url);
+        return url.startsWith("data:")
+          ? realFetch(input, init)
+          : Promise.reject(new Error(`A card fetched ${url}`));
+      });
+    try {
+      const response = await renderCard({
+        title: "Łódź, Kraków and Gdańsk",
+        subtitle: "Łódź, ő, ș, ğ",
+        footer: "Irfan Tayyab · Full-Stack AI Engineer",
+      });
+      await response.arrayBuffer();
+    } finally {
+      spy.mockRestore();
+    }
+    expect(fetched.filter((url) => !url.startsWith("data:"))).toEqual([]);
   });
 });

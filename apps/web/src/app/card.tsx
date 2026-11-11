@@ -5,7 +5,11 @@ import { cardSize } from "./page-metadata";
 import { pageColors, textColors } from "./theme";
 import { woffCodePoints } from "./woff-glyphs";
 
-const fontFamily = "Newsreader";
+const families = { latin: "Newsreader", "latin-ext": "Newsreader Ext" };
+
+const fontFamily = Object.values(families)
+  .map((name) => JSON.stringify(name))
+  .join(", ");
 
 const fontFiles = [
   { subset: "latin", weight: 400 },
@@ -39,7 +43,7 @@ let fonts: Promise<Fonts> | undefined;
 async function readFonts(): Promise<Fonts> {
   const files = await Promise.all(
     fontFiles.map(async ({ subset, weight }) => ({
-      name: fontFamily,
+      name: families[subset],
       weight,
       style: "normal" as const,
       data: await readFile(

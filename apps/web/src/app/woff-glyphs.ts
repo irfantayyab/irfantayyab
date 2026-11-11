@@ -66,23 +66,34 @@ function format12(data: DataView, start: number, glyphs: Set<number>) {
   }
 }
 
+function isUnicode(platform: number, encoding: number) {
+  return (
+    (platform === 3 && [0, 1, 10].includes(encoding)) ||
+    (platform === 0 && encoding <= 4)
+  );
+}
+
+function subtableOffset(data: DataView) {
+  for (let r = data.getUint16(2) - 1; r >= 0; r--) {
+    const record = 4 + r * 8;
+    if (isUnicode(data.getUint16(record), data.getUint16(record + 2))) {
+      return data.getUint32(record + 4);
+    }
+  }
+  throw new Error("The WOFF file has no Unicode cmap subtable");
+}
+
 export function woffCodePoints(woff: Uint8Array) {
   const data = view(cmapTable(woff));
   const glyphs = new Set<number>();
-  const records = data.getUint16(2);
-  for (let r = 0; r < records; r++) {
-    const record = 4 + r * 8;
-    const platform = data.getUint16(record);
-    const start = data.getUint32(record + 4);
-    const format = data.getUint16(start);
-    if (platform !== 0 && platform !== 3) {
-      continue;
-    }
-    if (format === 4) {
-      format4(data, start, glyphs);
-    } else if (format === 12) {
-      format12(data, start, glyphs);
-    }
+  const start = subtableOffset(data);
+  const format = data.getUint16(start);
+  if (format === 4) {
+    format4(data, start, glyphs);
+  } else if (format === 12) {
+    format12(data, start, glyphs);
+  } else {
+    throw new Error(`The WOFF file's cmap subtable is format ${format}`);
   }
   return glyphs;
 }
