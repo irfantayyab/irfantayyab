@@ -1,6 +1,6 @@
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { productionUrl } from "../../web/src/site.ts";
+import { productionUrl } from "../../web/src/production-url.ts";
 import type { DevToResult } from "./devto.ts";
 import { findPost, isWorkersDev, type FeedPost } from "./feed.ts";
 
@@ -37,6 +37,15 @@ export class UsageError extends Error {
   }
 }
 
+export function feedSource(value: string | undefined) {
+  if (value === undefined) {
+    return productionFeed;
+  }
+  return /^https?:\/\//.test(value)
+    ? value
+    : path.resolve(process.env.INIT_CWD ?? process.cwd(), value);
+}
+
 export function parseOptions(argv: readonly string[]): Options {
   let parsed;
   try {
@@ -68,7 +77,7 @@ export function parseOptions(argv: readonly string[]): Options {
   }
   return {
     slug,
-    feed: parsed.values.feed ?? productionFeed,
+    feed: feedSource(parsed.values.feed),
     publish: parsed.values.publish,
     only: only as Target[],
   };

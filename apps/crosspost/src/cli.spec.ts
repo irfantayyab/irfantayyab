@@ -1,5 +1,7 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  feedSource,
   parseOptions,
   productionFeed,
   run,
@@ -8,6 +10,28 @@ import {
   type Dependencies,
 } from "./cli.ts";
 import { feedPost } from "./testing/post.ts";
+
+describe("feedSource", () => {
+  it("reads a feed's path from the folder the command was typed in", () => {
+    const before = process.env.INIT_CWD;
+    process.env.INIT_CWD = path.resolve("/typed/here");
+    try {
+      expect(feedSource("out/feed.xml")).toBe(
+        path.resolve("/typed/here", "out/feed.xml"),
+      );
+      expect(feedSource("https://b.dev/feed.xml")).toBe(
+        "https://b.dev/feed.xml",
+      );
+      expect(feedSource(undefined)).toBe(productionFeed);
+    } finally {
+      if (before === undefined) {
+        delete process.env.INIT_CWD;
+      } else {
+        process.env.INIT_CWD = before;
+      }
+    }
+  });
+});
 
 describe("parseOptions", () => {
   it("reads the production feed and every target by default, as drafts", () => {

@@ -1,5 +1,6 @@
 import { postSlug, type FeedPost } from "./feed.ts";
 import { toMarkdown } from "./markdown.ts";
+import { request } from "./request.ts";
 
 export const devToApi = "https://dev.to/api";
 export const devToTagLimit = 4;
@@ -53,7 +54,7 @@ export function devToArticle(post: FeedPost, published: boolean) {
 
 export function devToClient(apiKey: string, fetcher: typeof fetch = fetch) {
   async function call<T>(method: string, path: string, body?: unknown) {
-    const response = await fetcher(`${devToApi}${path}`, {
+    const { ok, status, text } = await request(fetcher, `${devToApi}${path}`, {
       method,
       headers: {
         "api-key": apiKey,
@@ -62,10 +63,9 @@ export function devToClient(apiKey: string, fetcher: typeof fetch = fetch) {
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    const text = await response.text();
-    if (!response.ok) {
+    if (!ok) {
       throw new DevToError(
-        `${method} ${path} answered ${response.status}: ${text.slice(0, 300)}`,
+        `${method} ${path} answered ${status}: ${text.slice(0, 300)}`,
       );
     }
     try {
@@ -86,7 +86,7 @@ export function devToClient(apiKey: string, fetcher: typeof fetch = fetch) {
       const match = articles.find(
         (article) => slugOf(article.canonical_url) === slug,
       );
-      if (match || articles.length < devToPageSize) {
+      if (match || articles.length === 0) {
         return match;
       }
     }

@@ -91,6 +91,17 @@ describe("readFeed", () => {
     );
   });
 
+  it("names the feed when it cannot be fetched", async () => {
+    const fetcher = (async () => {
+      throw new TypeError("fetch failed", {
+        cause: new Error("connect ECONNREFUSED 127.0.0.1:443"),
+      });
+    }) as typeof fetch;
+    await expect(readFeed("https://a.dev/feed.xml", fetcher)).rejects.toThrow(
+      "https://a.dev/feed.xml could not be reached: connect ECONNREFUSED 127.0.0.1:443",
+    );
+  });
+
   it("reads a feed from a file", async () => {
     expect(await readFeed(fixture)).toHaveLength(1);
   });

@@ -3,15 +3,24 @@
   "extends": ["//"],
   "tasks": {
     "typecheck": {
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/web/src/site.ts"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/web/src/production-url.ts"
+      ],
       "outputs": []
     },
     "test": {
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/web/src/site.ts"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/web/src/production-url.ts"
+      ],
       "outputs": []
     },
     "test:all": {
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/web/src/site.ts"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/web/src/production-url.ts"
+      ],
       "outputs": []
     }
   }

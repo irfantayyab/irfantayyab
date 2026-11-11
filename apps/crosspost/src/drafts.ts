@@ -13,8 +13,30 @@ export function escapeHtml(value: string) {
     .replaceAll('"', "&quot;");
 }
 
+const xLightRanges = [
+  [0, 4351],
+  [8192, 8205],
+  [8208, 8223],
+  [8242, 8247],
+] as const;
+
+const emoji = /\p{RGI_Emoji}/gv;
+
+function xWeight(character: string) {
+  const code = character.codePointAt(0) ?? 0;
+  return xLightRanges.some(([from, to]) => code >= from && code <= to) ? 1 : 2;
+}
+
 export function xLength(text: string) {
-  return [...text.replace(/https?:\/\/\S+/g, "x".repeat(xLinkLength))].length;
+  const linked = text.replace(/https?:\/\/\S+/g, "x".repeat(xLinkLength));
+  const emojis = linked.match(emoji)?.length ?? 0;
+  return (
+    emojis * 2 +
+    [...linked.replace(emoji, "")].reduce(
+      (length, character) => length + xWeight(character),
+      0,
+    )
+  );
 }
 
 export function xPost(post: FeedPost) {

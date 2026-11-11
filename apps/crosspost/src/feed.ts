@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { XMLParser } from "fast-xml-parser";
+import { request } from "./request.ts";
 
 export type Tag = {
   slug: string;
@@ -109,11 +110,11 @@ export async function readFeed(
   fetcher: typeof fetch = fetch,
 ): Promise<FeedPost[]> {
   if (/^https?:\/\//.test(source)) {
-    const response = await fetcher(source);
-    if (!response.ok) {
-      throw new FeedError(`${source} answered ${response.status}`);
+    const answer = await request(fetcher, source);
+    if (!answer.ok) {
+      throw new FeedError(`${source} answered ${answer.status}`);
     }
-    return parseFeed(await response.text());
+    return parseFeed(answer.text);
   }
   return parseFeed(await readFile(source, "utf8"));
 }

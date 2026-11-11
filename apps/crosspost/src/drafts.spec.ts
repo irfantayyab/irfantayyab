@@ -18,8 +18,15 @@ describe("xLength", () => {
     );
   });
 
-  it("counts an emoji as one character", () => {
-    expect(xLength("😀")).toBe(1);
+  it("counts an emoji as two, a joined emoji sequence included", () => {
+    expect(xLength("😀")).toBe(2);
+    expect(xLength("👩‍💻")).toBe(2);
+  });
+
+  it("counts Latin and common punctuation as one, and other symbols as two", () => {
+    expect(xLength("é—’")).toBe(3);
+    expect(xLength("…→✓")).toBe(6);
+    expect(xLength("日本")).toBe(4);
   });
 });
 

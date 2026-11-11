@@ -80,10 +80,11 @@ describe("devToClient", () => {
     });
     expect(calls.map(({ method, url }) => `${method} ${url}`)).toEqual([
       `GET ${devToApi}/articles/me/all?page=1&per_page=${devToPageSize}`,
+      `GET ${devToApi}/articles/me/all?page=2&per_page=${devToPageSize}`,
       `POST ${devToApi}/articles`,
     ]);
     expect(calls.every(({ key }) => key === "key")).toBe(true);
-    expect(calls[1]?.body).toMatchObject({ article: { published: false } });
+    expect(calls[2]?.body).toMatchObject({ article: { published: false } });
   });
 
   it("updates the article whose canonical link is the post's path, even on another host", async () => {
@@ -109,12 +110,9 @@ describe("devToClient", () => {
     expect(calls[1]?.body).toMatchObject({ article: { published: true } });
   });
 
-  it("looks through every page of articles", async () => {
-    const full = Array.from({ length: devToPageSize }, (_, i) =>
-      article({ id: i + 10 }),
-    );
+  it("looks through every page of articles, however short dev.to makes them", async () => {
     const { calls, client } = fakeDevTo([
-      full,
+      [article({ id: 10 })],
       [article({ id: 2, canonical_url: "https://a.dev/writing/a-post" })],
     ]);
     await client.post(feedPost(), false);
@@ -129,6 +127,19 @@ describe("devToClient", () => {
     );
     await expect(client.post(feedPost(), false)).rejects.toThrow(
       "POST /articles answered 422: Unprocessable",
+    );
+  });
+
+  it("names dev.to's address and the cause when it cannot be reached", async () => {
+    const fetcher = (async () => {
+      throw new TypeError("fetch failed", {
+        cause: new Error("getaddrinfo ENOTFOUND dev.to"),
+      });
+    }) as typeof fetch;
+    await expect(
+      devToClient("key", fetcher).post(feedPost(), false),
+    ).rejects.toThrow(
+      `${devToApi}/articles/me/all?page=1&per_page=${devToPageSize} could not be reached: getaddrinfo ENOTFOUND dev.to`,
     );
   });
 
