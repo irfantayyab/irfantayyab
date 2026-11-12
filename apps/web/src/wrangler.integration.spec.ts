@@ -15,7 +15,7 @@ async function readWranglerConfig() {
     text,
   );
   expect(error).toBeUndefined();
-  return config as { routes?: Route[] };
+  return config as { routes?: Route[]; preview_urls?: boolean };
 }
 
 describe("the Worker's config", () => {
@@ -24,5 +24,10 @@ describe("the Worker's config", () => {
     expect(routes).toEqual([
       { pattern: new URL(productionUrl).host, custom_domain: true },
     ]);
+  });
+
+  it("keeps preview URLs on for pull requests", async () => {
+    const { preview_urls } = await readWranglerConfig();
+    expect(preview_urls).toBe(true);
   });
 });

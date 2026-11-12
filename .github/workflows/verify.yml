@@ -73,7 +73,12 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = push ]; then
             pnpm exec wrangler deploy
-            url=$(jq -r 'select(.type == "deploy") | .targets[0]' "$WRANGLER_OUTPUT_FILE_PATH")
+            url=$(node --input-type=module -e 'import { productionUrl } from "./src/production-url.ts"; console.log(productionUrl)')
+            hosts=$(jq -r 'select(.type == "deploy") | .targets[] | split(" ")[0] | ltrimstr("https://")' "$WRANGLER_OUTPUT_FILE_PATH")
+            if ! printf '%s\n' "$hosts" | grep -qxF "${url#https://}"; then
+              echo "Wrangler deployed to $(echo $hosts), not to the production address $url"
+              exit 1
+            fi
           else
             pnpm exec wrangler versions upload --preview-alias "pr-$PR_NUMBER"
             url=$(jq -r 'select(.type == "version-upload") | .preview_alias_url' "$WRANGLER_OUTPUT_FILE_PATH")
