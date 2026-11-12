@@ -3,8 +3,9 @@
   "name": "portfolio",
   "account_id": "9022f791617eae4dce0685b9a19e4d78",
   "compatibility_date": "2026-11-04",
-  "workers_dev": true,
+  "workers_dev": false,
   "preview_urls": true,
+  "routes": [{ "pattern": "irfantayyab.com", "custom_domain": true }],
   "assets": {
     "directory": "./out",
     "not_found_handling": "404-page",

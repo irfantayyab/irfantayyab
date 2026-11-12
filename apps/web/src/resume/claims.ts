@@ -12,7 +12,7 @@ export type ResumeLink = {
 export const resume = {
   name: "Irfan Tayyab",
   headline: "Full-Stack AI Engineer",
-  email: "irfantayyib07@gmail.com",
+  email: "hello@irfantayyab.com",
   links: {
     linkedin: {
       url: "https://www.linkedin.com/in/irfan-tayyab-31b52330b/",
@@ -23,8 +23,8 @@ export const resume = {
       label: "github.com/irfantayyab",
     },
     website: {
-      url: "https://irfantayyab.vercel.app/",
-      label: "irfantayyab.vercel.app",
+      url: "https://irfantayyab.com",
+      label: "irfantayyab.com",
     },
   },
   education: [
