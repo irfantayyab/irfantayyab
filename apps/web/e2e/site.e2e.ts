@@ -187,7 +187,7 @@ test.describe("without JavaScript", () => {
       await expect(page.locator("h1")).toBeVisible();
       await expect(page.locator("main")).toBeVisible();
       await expect(
-        page.getByRole("link", { name: "@irfantayyab" }),
+        page.getByRole("link", { name: "@irfantayyab", exact: true }),
       ).toHaveAttribute("href", resume.links.github.url);
     });
   }
@@ -956,6 +956,26 @@ test("/code.css styles the code blocks, in both themes", async ({
   const css = await response.text();
   expect(css).toContain(".expressive-code");
   expect(css).toContain("@media (prefers-color-scheme: light)");
+});
+
+test("every page and file asks browsers for HTTPS only", async ({
+  request,
+}) => {
+  const paths = [
+    ...pages,
+    feedPath,
+    "/resume.pdf",
+    portfolioPdfPath,
+    "/code.css",
+    siteCardPath,
+  ];
+  for (const path of paths) {
+    const response = await request.get(path);
+    expect(response.status(), path).toBe(200);
+    expect(response.headers()["strict-transport-security"], path).toBe(
+      "max-age=31536000; includeSubDomains",
+    );
+  }
 });
 
 test("the resume is the committed PDF, to open or save", async ({

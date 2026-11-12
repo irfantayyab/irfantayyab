@@ -1,1 +1,1 @@
-export const productionUrl = "https://portfolio.irfantayyab.workers.dev";
+export const productionUrl = "https://irfantayyab.com";
