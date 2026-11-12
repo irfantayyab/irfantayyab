@@ -15,8 +15,8 @@ export const resume = {
   email: "hello@irfantayyab.com",
   links: {
     linkedin: {
-      url: "https://www.linkedin.com/in/irfan-tayyab-31b52330b/",
-      label: "linkedin.com/in/irfan-tayyab-31b52330b",
+      url: "https://www.linkedin.com/in/irfantayyab/",
+      label: "linkedin.com/in/irfantayyab",
     },
     github: {
       url: "https://github.com/irfantayyab",
