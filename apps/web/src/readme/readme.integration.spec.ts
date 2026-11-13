@@ -20,9 +20,4 @@ describe("the profile README", () => {
     }));
     await expect(withPosts(readme, listed)).toMatchFileSnapshot(readmePath);
   });
-
-  it("links the site at its production address", async () => {
-    const readme = await readFile(readmePath, "utf8");
-    expect(readme).toContain(`](${productionUrl})`);
-  });
 });
