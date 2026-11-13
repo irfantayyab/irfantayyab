@@ -83,6 +83,8 @@ export class WritingError extends Error {
   }
 }
 
+export const latestPostCount = 5;
+
 export function postPath(slug: string) {
   return `/writing/${slug}`;
 }

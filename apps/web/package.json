@@ -10,7 +10,8 @@
     "test": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:all": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "readme": "vitest run --project integration src/readme -u"
   },
   "dependencies": {
     "@fontsource-variable/newsreader": "^5.3.0",

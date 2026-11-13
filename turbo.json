@@ -40,6 +40,7 @@
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.tex",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.sha256",
+        "$TURBO_ROOT$/README.md",
         "$TURBO_ROOT$/content/writing/**"
       ],
       "outputs": []
@@ -50,6 +51,7 @@
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.tex",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.pdf",
         "$TURBO_ROOT$/resume/Irfan_Tayyab_SWE.sha256",
+        "$TURBO_ROOT$/README.md",
         "$TURBO_ROOT$/content/writing/**"
       ],
       "outputs": []
