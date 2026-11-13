@@ -1,8 +1,4 @@
-# Irfan Tayyab
-
-**Full-Stack AI Engineer.** I build web applications end to end, and lately the AI inside them: models that classify, route and draft, with a person still deciding what goes out.
-
-[Website](https://irfantayyab.com) · [LinkedIn](https://www.linkedin.com/in/irfantayyab/) · [Resume (PDF)](https://irfantayyab.com/resume.pdf) · [Portfolio (PDF)](https://irfantayyab.com/portfolio.pdf)
+I build web applications end to end, and lately the AI inside them, with a person still deciding what goes out.
 
 ## Latest posts
 
@@ -12,4 +8,4 @@
 
 <!-- posts:end -->
 
-[All writing](https://irfantayyab.com/writing)
+More at [irfantayyab.com](https://irfantayyab.com)
