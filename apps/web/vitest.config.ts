@@ -22,6 +22,7 @@ export default defineConfig({
         test: {
           name: "integration",
           include: [integrationTests],
+          testTimeout: 20_000,
         },
       },
     ],

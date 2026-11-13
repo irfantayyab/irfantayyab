@@ -12,6 +12,7 @@ import { projects } from "@/portfolio/projects";
 import { resume } from "@/resume/claims";
 import { loadWriting } from "@/writing/load";
 import { PostList } from "@/writing/post-list";
+import { latestPostCount } from "@/writing/writing";
 import { pageMetadata, siteDescription } from "@/app/page-metadata";
 
 export const metadata: Metadata = pageMetadata({
@@ -27,11 +28,9 @@ const contactLinks = [
   { label: "Portfolio (PDF)", url: portfolioPdfPath },
 ];
 
-const latestCount = 5;
-
 export default async function HomePage() {
   const { posts } = await loadWriting();
-  const latest = posts.slice(0, latestCount);
+  const latest = posts.slice(0, latestPostCount);
   return (
     <>
       <h1 className="text-4xl/tight font-semibold tracking-tight">

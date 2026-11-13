@@ -31,6 +31,7 @@ import { loadWritingFrom } from "../src/writing/load";
 import { writingDir } from "../src/writing/source";
 import { calloutLabels } from "../src/writing/markdown";
 import {
+  latestPostCount,
   postCardPath,
   postFilePath,
   postPath,
@@ -326,7 +327,7 @@ test.describe("without JavaScript", () => {
 
   test("the home page lists the latest writing", async ({ page }) => {
     await page.goto("/");
-    const latest = writing.posts.slice(0, 5);
+    const latest = writing.posts.slice(0, latestPostCount);
     const section = page.locator("section", {
       has: page.getByRole("heading", { level: 2, name: "Writing" }),
     });

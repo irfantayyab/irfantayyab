@@ -2,7 +2,7 @@ import { resume } from "@/resume/claims";
 
 const github = resume.links.github.url;
 
-export const portfolioRepoUrl = `${github}/portfolio`;
+export const portfolioRepoUrl = `${github}/irfantayyab`;
 
 export const plumbFixUrl = `${github}/plumb-mcp/commit/2ef8952`;
 
