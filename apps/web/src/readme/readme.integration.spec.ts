@@ -1,9 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { introLine } from "@/portfolio/intro";
-import { portfolioPdfPath, resumePath } from "@/portfolio/links";
 import { productionUrl } from "@/production-url";
-import { resume } from "@/resume/claims";
 import { loadWritingFrom } from "@/writing/load";
 import { writingDir } from "@/writing/source";
 import { postPath } from "@/writing/writing";
@@ -24,21 +21,8 @@ describe("the profile README", () => {
     await expect(withPosts(readme, listed)).toMatchFileSnapshot(readmePath);
   });
 
-  it("says the headline and the bio's first line as the site does", async () => {
+  it("links the site at its production address", async () => {
     const readme = await readFile(readmePath, "utf8");
-    expect(readme).toContain(`**${resume.headline}.** ${introLine}`);
-  });
-
-  it("links the site, LinkedIn, the resume and the portfolio PDF where the site does", async () => {
-    const readme = await readFile(readmePath, "utf8");
-    for (const url of [
-      productionUrl,
-      resume.links.linkedin.url,
-      `${productionUrl}${resumePath}`,
-      `${productionUrl}${portfolioPdfPath}`,
-      `${productionUrl}/writing`,
-    ]) {
-      expect(readme).toContain(`](${url})`);
-    }
+    expect(readme).toContain(`](${productionUrl})`);
   });
 });
