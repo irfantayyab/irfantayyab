@@ -187,9 +187,12 @@ test.describe("without JavaScript", () => {
       await expect(page.locator("h1")).toHaveCount(1);
       await expect(page.locator("h1")).toBeVisible();
       await expect(page.locator("main")).toBeVisible();
-      await expect(
-        page.getByRole("link", { name: "@irfantayyab", exact: true }),
-      ).toHaveAttribute("href", resume.links.github.url);
+      const handle = page.getByRole("link", {
+        name: "@irfantayyab",
+        exact: true,
+      });
+      await expect(handle).toHaveAttribute("href", resume.links.github.url);
+      await expect(handle).toHaveAttribute("target", "_blank");
     });
   }
 
