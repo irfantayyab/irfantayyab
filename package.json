@@ -6,6 +6,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "dev": "pnpm -F @portfolio/web dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run //#eslint:root lint",
