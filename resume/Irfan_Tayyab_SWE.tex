@@ -190,7 +190,7 @@
 %  One line: a grey marker bar, then "Role, Company" on the left and the
 %  dates flush right. The title starts \entryindent in; bullets line up with it.
 \newcommand{\jobmarker}{{\color{headgray}%
-  \rule[-1pt]{\markerwidth}{\dimexpr\fontcharht\font`H+2pt\relax}}}
+  \smash{\rule[-1pt]{\markerwidth}{\dimexpr\fontcharht\font`H+2pt\relax}}}}
 \newcommand{\job}[3]{%
   \makebox[\entryindent][l]{\jobmarker}%
   {\semiboldfont\color{black}#1}, #2\hfill #3\par
@@ -259,11 +259,11 @@
 \section*{Education}
 
 \job{BS in Computer Science}{Virtual University of Pakistan}{}
-\vspace{2pt}
-{\leftskip=\entryindent Final Year Project: an AI platform (FastAPI, LangChain, n8n)
-that routes students' queries from the web, email and WhatsApp.\par
-It uses Gemini with a Groq fallback, structured output and PII redaction, routing uncertain
-queries to a person.\par}
+\vspace{\bulletgap}
+{\leftskip=\entryindent \rightskip=\dimexpr\bulletright\relax plus 1fil Final Year Project: an AI platform (FastAPI, LangChain, n8n)
+that routes students' queries from the web, email and WhatsApp
+\textbf{in a median of 1.2 seconds}, with model fallback, personal data masked from the models,
+and low-confidence queries passed to a human. Built with a coding-agent harness.\par}
 \addvspace{\jobgap}
 
 
@@ -278,15 +278,15 @@ queries to a person.\par}
   \item Architected a \textbf{configuration-driven form system} powering 8+ multi-step variations,
         with schema branching and per-step validation, making new flows quick to add and
         easy for the team to build on together.
-  \item Set up a \textbf{Turborepo monorepo} with shared linting, formatting and pre-commit
+  \item Set up a Turborepo monorepo with shared linting, formatting and pre-commit
         checks (lint-staged), giving the team and its AI tools one consistent codebase.
   \item Created shared, reusable components and complex layouts with React Portals,
         turning Figma designs into pixel-perfect UIs with AI-assisted tooling and
         \textbf{minimal designer-developer revision cycles}.
-  \item Engineered a \textbf{personalized widget dashboard} on a drag-and-drop grid (dnd-kit),
+  \item Engineered a widget dashboard with \textbf{per-user layouts} on a drag-and-drop grid (dnd-kit),
         letting users rearrange, resize and reshape widgets while the layout holds on every
         screen size.
-  \item Adopted \textbf{AI-driven development} with Claude and Cursor, using prompt engineering
+  \item Adopted AI-assisted development with Claude and Cursor, using prompt engineering
         to streamline the work, alongside AI-powered pull request reviews and the team's
         custom skills plugin.
 \end{itemize}
@@ -294,32 +294,34 @@ queries to a person.\par}
 \job{Open Source Contributor}{Plumb MCP}{Aug 2026}
 \begin{itemize}
   \item Fixed a Figma \textbf{UI freeze} in Plumb MCP's plugin bridge by moving selection
-        sync from push to on-demand pull, removing a full node-tree walk on every click;
-        merged with all 955 tests passing
+        sync from push to on-demand pull, removing a full node-tree walk on every click.
+        Reused the bridge's existing request/reply path. Merged upstream with all 955 tests passing
         (\href{https://github.com/irfantayyab/plumb-mcp/commit/2ef8952}{\uline{commit\ \extarrow}}).
 \end{itemize}
 
 \job{MERN Stack Engineer}{Sprouto Group}{Mar 2025 – Nov 2025}
 \begin{itemize}
-  \item Developed and integrated a \textbf{RAG-pattern AI chatbot} in \textbf{7 working days},
-        parsing documents with LlamaParse into Supabase to ground its answers in
-        retrieved sources.
+  \item Developed a \textbf{RAG-pattern AI chatbot} over uploaded documents (LlamaParse, Supabase)
+        that helped teachers catch plagiarism in student submissions. Tested with real users.
+  \item Shipped Brandably's B2B merchandise store end to end (Next.js, Stripe, Postgres),
+        with pipelines that import a supplier's full catalog and sync its prices and stock
+        automatically. \textbf{Now live and taking orders.}
   \item Led full-stack development within strict deadlines, delivering the
-        corporate website in \textbf{1 month} with SEO-friendly server-side rendering and
+        corporate website with SEO-friendly server-side rendering and
         scroll-based parallax animations.
-  \item Designed a typed \textbf{API integration layer} with centralized error handling, alongside
-        reusable, type-safe React components.
+  \item Designed a typed API integration layer with centralized error handling, plus
+        reusable React components.
   \item Managed the database, file storage and client-side server-state caching, cutting load
         times on slow connections.
-  \item Migrated \textbf{1.9 GB} of data from MySQL on AWS RDS to PostgreSQL on Supabase, and
-        \textbf{3 GB} of files from AWS S3 to Supabase Storage, with \textbf{zero data loss}.
+  \item Migrated 1.9 GB of data from MySQL on AWS RDS to PostgreSQL on Supabase, and
+        3 GB of files from AWS S3 to Supabase Storage, with \textbf{zero data loss}.
 \end{itemize}
 
 \job{MERN Stack Developer}{CodeFlamme Pvt Ltd}{Jul 2024 – Feb 2025}
 \begin{itemize}
-  \item Built a \textbf{real-time chat system} and live notifications with Socket.io (WebSockets).
-  \item Implemented one-time payments and \textbf{auto-renewing subscriptions} with Stripe and
-        PayPal, plus a referral system and its financial operations.
+  \item Built a real-time chat system and live notifications with Socket.io (WebSockets).
+  \item Implemented one-time payments and auto-renewing subscriptions with Stripe and
+        PayPal, plus a referral system.
   \item Secured routes with role- and region-based authorization, plus Google,
         LinkedIn and Facebook OAuth sign-in.
   \item Localized the frontend with i18next and established a multi-language transactional email
@@ -334,20 +336,18 @@ queries to a person.\par}
 \section*{Skills}
 
 \begin{skills}
-  \skill{AI \& Automation}{LLM APIs (Gemini, Groq, Claude), LangChain, Structured Output,
-    Model Fallback, RAG, Prompt Engineering, PII Redaction,
-    NLP (Intent Detection, Entity Extraction, Text Classification), n8n Workflows,
-    Gmail API, WhatsApp}
-  \skill{Languages}{Python, TypeScript, JavaScript, SQL}
-  \skill{Python}{FastAPI, SQLAlchemy 2 (async), asyncpg, Pydantic v2, Alembic,
-    pytest, uv, Ruff, Pyright (strict)}
+  \skill{Languages}{Python, TypeScript, JavaScript, SQL, HTML, CSS}
   \skill{Frontend}{React.js, Next.js, Redux Toolkit, TanStack Query,
     React Hook Form, Zod, Tailwind CSS, Material UI, Figma}
-  \skill{Backend}{Node.js, NestJS, GraphQL (Apollo), REST APIs,
-    WebSockets (Socket.io), JWT}
+  \skill{Backend}{Node.js, NestJS, FastAPI, REST APIs, GraphQL (Apollo), WebSockets (Socket.io), JWT, SQLAlchemy 2 (async), Alembic}
   \skill{Databases}{PostgreSQL, MySQL, MongoDB, Prisma, Drizzle, Supabase, Firebase}
-  \skill{DevOps \& Testing}{Docker, Docker Compose, Caddy, Oracle Cloud, Vercel, GitHub Actions (CI),
-    Git, Jest/Vitest, React Testing Library}
+  \skill{AI Engineering}{LLM APIs (Gemini, Groq, Claude), LangChain, Model Context Protocol (MCP),
+    Structured Output, Model~Fallback, RAG, PII~Redaction,
+    NLP (Intent Detection, Entity Extraction, Text Classification)}
+  \skill{DevOps \& Testing}{Docker, Caddy, AWS, GCP, Oracle Cloud, Vercel, GitHub Actions,
+    Git, Jest/Vitest, React Testing Library, pytest}
+  \skill{AI Workflow}{Prompt Engineering, Context Engineering, Coding-Agent Harness Engineering,
+    Agentic~Coding, Spec-Driven~Development}
 \end{skills}
 
 
