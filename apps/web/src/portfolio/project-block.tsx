@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { linkTarget } from "@/app/link-target";
 import { projectScreenshots } from "./project-screenshots";
 import type { Project } from "./projects";
 
@@ -7,13 +8,17 @@ export function ProjectBlock({ project }: { project: Project }) {
   const screenshot = projectScreenshots[name];
   return (
     <article>
-      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
         <h3 className="text-xl font-semibold">{name}</h3>
         {links.length > 0 ? (
           <ul className="flex flex-wrap gap-x-4 font-sans text-base">
             {links.map(({ label, url }) => (
               <li key={url}>
-                <a href={url} aria-label={`${name}: ${label}`}>
+                <a
+                  href={url}
+                  aria-label={`${name}: ${label}`}
+                  {...linkTarget(url)}
+                >
                   {label}
                 </a>
               </li>
