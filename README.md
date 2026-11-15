@@ -4,6 +4,6 @@ Latest posts:
 
 <!-- posts:start -->
 
-- [Holding a portfolio to its resume](https://irfantayyab.com/writing/holding-a-portfolio-to-its-resume) · 11 Nov 2026
+- [Holding a portfolio to its resume](https://irfantayyab.com/writing/holding-a-portfolio-to-its-resume) · 15 Nov 2026
 
 <!-- posts:end -->
