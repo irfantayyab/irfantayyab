@@ -17,6 +17,7 @@
     "test:e2e": "turbo run test:e2e",
     "crosspost": "pnpm -F @portfolio/crosspost start",
     "readme": "pnpm -F @portfolio/web readme",
+    "claims": "pnpm -F @portfolio/web claims",
     "format": "prettier --write .",
     "format:check": "turbo run //#prettier:check",
     "prettier:check": "prettier --check .",

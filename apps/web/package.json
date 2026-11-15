@@ -11,7 +11,8 @@
     "test:integration": "vitest run --project integration",
     "test:all": "vitest run",
     "test:e2e": "playwright test",
-    "readme": "vitest run --project integration src/readme -u"
+    "readme": "vitest run --project integration src/readme -u",
+    "claims": "node scripts/write-claims.ts"
   },
   "dependencies": {
     "@fontsource-variable/newsreader": "^5.3.0",

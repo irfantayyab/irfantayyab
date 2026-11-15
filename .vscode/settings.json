@@ -28,12 +28,17 @@
       "name": "resume-hash",
       "command": "node",
       "args": ["%DIR%/../scripts/resume-hash.mjs", "%DOC_EXT%"]
+    },
+    {
+      "name": "resume-claims",
+      "command": "node",
+      "args": ["%DIR%/../apps/web/scripts/write-claims.ts"]
     }
   ],
   "latex-workshop.latex.recipes": [
     {
       "name": "latexmk (xelatex → .build/)",
-      "tools": ["latexmk-xelatex", "resume-hash"]
+      "tools": ["latexmk-xelatex", "resume-hash", "resume-claims"]
     }
   ],
   "files.exclude": {

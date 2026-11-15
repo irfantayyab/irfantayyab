@@ -1,4 +1,13 @@
-import type { ResumeEntry, ResumeLink } from "@/resume/claims";
+export type ResumeEntry = {
+  title: string;
+  organisation: string;
+  dates: string;
+};
+
+export type ResumeLink = {
+  url: string;
+  label: string;
+};
 
 export type ResumeSection = {
   title: string;
