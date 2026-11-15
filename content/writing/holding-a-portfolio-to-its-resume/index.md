@@ -5,7 +5,7 @@ description: How this site keeps every job title, date and link letter for lette
 tags: [testing, nextjs, latex]
 ---
 
-A portfolio and a resume describe the same person, so they must never disagree. The resume is what a recruiter reads first, and the moment the two differ, the portfolio is the one that looks careless: a job title spelled differently, a date a month off, a link that moved.
+A portfolio and a resume describe the same person, so they must never disagree. The resume is what a recruiter reads first, and the moment the two differ, the portfolio is the one that looks careless: a job title spelled differently, a date a month off, a link that moved. Small things, but each might cost a little trust.
 
 I could keep the two matching by hand, but I might forget. So this site is built on one principle: **if the portfolio and the resume disagree, the site's build fails**, and nothing goes live until they agree again.
 
@@ -13,9 +13,9 @@ I could keep the two matching by hand, but I might forget. So this site is built
 
 Everything the site repeats from the resume lives in one TypeScript file, `claims.ts`: my name and headline, my email, my LinkedIn, GitHub and website addresses, and each job and degree with its dates. I call these **the claims**. The site's pages are built from that file.
 
-So I edit two files, the resume and `claims.ts` (or let an AI do it), and it does not matter which one changes first. What matters is that every claim in one matches the other letter for letter, which is easy to get wrong, for me or the AI.
+So I edit two files, the resume and `claims.ts` (AI helps), and it does not matter which one changes first. What matters is that every claim in one matches the other letter for letter.
 
-That alone does not keep anything true. It only means there is one place to check against the resume.
+Having one file does not make it match the resume. It only gives the checks one place to look.
 
 ## A test that reads the LaTeX
 
