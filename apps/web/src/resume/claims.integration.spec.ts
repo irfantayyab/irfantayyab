@@ -4,9 +4,15 @@ import path from "node:path";
 import { extractText, getDocumentProxy } from "unpdf";
 import { describe, expect, it } from "vitest";
 import { experienceLinks } from "@/portfolio/experience";
-import { parseResumeTex } from "@/testing/resume-tex";
 import { resume } from "./claims";
-import { resumeHashPath, resumePdfPath, resumeTexPath } from "./source";
+import { claimsSource } from "./claims-source";
+import { parseResumeTex } from "./resume-tex";
+import {
+  claimsPath,
+  resumeHashPath,
+  resumePdfPath,
+  resumeTexPath,
+} from "./source";
 
 const claims = [
   resume.name,
@@ -44,6 +50,17 @@ describe("the committed PDF", () => {
 });
 
 describe("the resume's claims", () => {
+  it("are what pnpm claims writes from the LaTeX source", async () => {
+    const [tex, committed] = await Promise.all([
+      readFile(resumeTexPath, "utf8"),
+      readFile(claimsPath, "utf8"),
+    ]);
+    expect(
+      committed,
+      "claims.ts does not match the resume: save the resume in VS Code, or run pnpm claims",
+    ).toBe(claimsSource(tex));
+  });
+
   it("match the resume's LaTeX source word for word", async () => {
     const tex = parseResumeTex(await readFile(resumeTexPath, "utf8"));
     expect(tex).toEqual({
