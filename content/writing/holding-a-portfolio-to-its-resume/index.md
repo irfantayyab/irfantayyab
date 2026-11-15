@@ -1,6 +1,6 @@
 ---
 title: Holding a portfolio to its resume
-date: 2026-11-15
+date: 2026-11-16
 description: How this site keeps every job title, date and link letter for letter with my LaTeX resume, and why automated checks do it instead of me.
 tags: [testing, nextjs, latex]
 ---

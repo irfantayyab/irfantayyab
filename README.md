@@ -1,9 +1,13 @@
+<!-- intro:start -->
+
 I build web applications end to end, and lately the AI inside them, with a person still deciding what goes out.
+
+<!-- intro:end -->
 
 Latest posts:
 
 <!-- posts:start -->
 
-- [Holding a portfolio to its resume](https://irfantayyab.com/writing/holding-a-portfolio-to-its-resume) · 15 Nov 2026
+- [Holding a portfolio to its resume](https://irfantayyab.com/writing/holding-a-portfolio-to-its-resume) · 16 Nov 2026
 
 <!-- posts:end -->
