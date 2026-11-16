@@ -17,10 +17,7 @@ I never edit `claims.ts` by hand. A script writes it from the resume every time 
 
 ## A test that reads the LaTeX
 
-The resume is written in LaTeX: a plain-text file, `Irfan_Tayyab_SWE.tex`, which a program called XeLaTeX turns into the PDF. It sits in the same repository as the site.
-
-> [!NOTE]
-> From here on I call `Irfan_Tayyab_SWE.tex` **the source**, since the PDF is built from it.
+The resume is written in LaTeX: a plain-text file, `Irfan_Tayyab_SWE.tex`, which a program called XeLaTeX turns into the PDF. From here on I call that file **the source**, since the PDF is built from it. It sits in the same repository as the site.
 
 The script reads the source, picks out every claim in it, and writes `claims.ts`, which I commit with the resume. The site's build then reads a finished file and never has to understand LaTeX.
 
