@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { experienceLinks } from "@/portfolio/experience";
 import { resume } from "./claims";
 import { claimsSource } from "./claims-source";
-import { parseResumeTex } from "./resume-tex";
+import { parseResumeTex, type ResumeEntry } from "./resume-tex";
 import {
   claimsPath,
   resumeHashPath,
@@ -19,11 +19,19 @@ const claims = [
   resume.headline,
   resume.email,
   ...Object.values(resume.links).map(({ label }) => label),
-  ...[...resume.education, ...resume.experience].flatMap(
-    ({ title, organisation, dates }) =>
-      [`${title}, ${organisation}`, dates].filter(Boolean).join(" "),
-  ),
+  ...[...resume.education, ...resume.experience].map(entryLine),
 ];
+
+function entryLine({ title, organisation, dates }: ResumeEntry) {
+  return [`${title}, ${organisation}`, dates].filter(Boolean).join(" ");
+}
+
+function isContribution({ title, organisation }: ResumeEntry) {
+  return resume.openSource.some(
+    (contribution) =>
+      contribution.title === title && contribution.organisation === organisation,
+  );
+}
 
 function sha256(data: string | Uint8Array) {
   return createHash("sha256").update(data).digest("hex");
@@ -71,9 +79,14 @@ describe("the resume's claims", () => {
       links: Object.values(resume.links),
       sections: [
         { title: "Education", entries: resume.education },
-        { title: "Work Experience", entries: resume.experience },
+        { title: "Work Experience", entries: expect.any(Array) },
       ],
+      contributions: resume.openSource,
     });
+    const work = tex.sections[1]?.entries ?? [];
+    expect(work.filter((entry) => !isContribution(entry))).toEqual(
+      resume.experience,
+    );
   });
 
   it("link each job where the resume links it, and nowhere else", async () => {
@@ -112,6 +125,11 @@ describe("the resume's claims", () => {
         missing.push(claim);
       } else {
         from = at + claim.length + 1;
+      }
+    }
+    for (const claim of resume.openSource.map(entryLine)) {
+      if (!words.includes(` ${claim} `)) {
+        missing.push(claim);
       }
     }
     expect(missing, "claims missing from the PDF, or out of order").toEqual(

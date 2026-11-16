@@ -3,6 +3,8 @@ import Link from "next/link";
 import { experienceLinks } from "@/portfolio/experience";
 import { introLine } from "@/portfolio/intro";
 import {
+  javascriptInfoUrl,
+  plumbFixUrl,
   portfolioPdfPath,
   portfolioRepoUrl,
   resumePath,
@@ -13,6 +15,7 @@ import { resume } from "@/resume/claims";
 import { loadWriting } from "@/writing/load";
 import { PostList } from "@/writing/post-list";
 import { latestPostCount } from "@/writing/writing";
+import { linkTarget } from "@/app/link-target";
 import { pageMetadata, siteDescription } from "@/app/page-metadata";
 
 export const metadata: Metadata = pageMetadata({
@@ -41,16 +44,26 @@ export default async function HomePage() {
       <div className="mt-10 space-y-5">
         <p>{introLine}</p>
         <p>
-          I have shipped React, Next.js and Node.js products in teams, and my
-          final year project in computer science is SQREAS, an AI platform that
-          routes student queries, below.
+          I taught myself to build for the web from what others shared for free:
+          open-source code, documentation, answers and articles, and most of all{" "}
+          <a href={javascriptInfoUrl} {...linkTarget(javascriptInfoUrl)}>
+            javascript.info
+          </a>
+          , where I learned JavaScript. I try to give back in kind, by
+          contributing to open-source projects like{" "}
+          <a href={plumbFixUrl} {...linkTarget(plumbFixUrl)}>
+            Plumb MCP
+          </a>{" "}
+          and writing up what I learn.
         </p>
         <p>
           I care about software that stays easy to change: typed code, real
           tests, and checks that pass before anything ships. This site is built
           that way, in the open. Its source is on{" "}
-          <a href={portfolioRepoUrl}>GitHub</a>, and the{" "}
-          <a href={resumePath}>resume is a PDF</a> to read or save.
+          <a href={portfolioRepoUrl} {...linkTarget(portfolioRepoUrl)}>
+            GitHub
+          </a>
+          , and the <a href={resumePath}>resume is a PDF</a> to read or save.
         </p>
       </div>
 
@@ -58,7 +71,7 @@ export default async function HomePage() {
         <h2 id="projects" className="text-2xl font-semibold tracking-tight">
           Projects
         </h2>
-        <div className="mt-8 space-y-14">
+        <div className="mt-8 divide-y divide-underline">
           {projects.map((project) => (
             <ProjectBlock key={project.name} project={project} />
           ))}
@@ -79,7 +92,13 @@ export default async function HomePage() {
               >
                 <span>
                   {title},{" "}
-                  {link ? <a href={link}>{organisation}</a> : organisation}
+                  {link ? (
+                    <a href={link} {...linkTarget(link)}>
+                      {organisation}
+                    </a>
+                  ) : (
+                    organisation
+                  )}
                 </span>{" "}
                 <span className="shrink-0 font-sans text-base text-muted">
                   {dates}
@@ -109,7 +128,9 @@ export default async function HomePage() {
         <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 font-sans text-base">
           {contactLinks.map(({ label, url }) => (
             <li key={label}>
-              <a href={url}>{label}</a>
+              <a href={url} {...linkTarget(url)}>
+                {label}
+              </a>
             </li>
           ))}
         </ul>

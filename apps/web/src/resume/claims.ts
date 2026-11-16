@@ -33,11 +33,6 @@ export const resume = {
       dates: "Nov 2025 – Oct 2026",
     },
     {
-      title: "Open Source Contributor",
-      organisation: "Plumb MCP",
-      dates: "Aug 2026",
-    },
-    {
       title: "MERN Stack Engineer",
       organisation: "Sprouto Group",
       dates: "Mar 2025 – Nov 2025",
@@ -48,7 +43,15 @@ export const resume = {
       dates: "Jul 2024 – Feb 2025",
     },
   ],
-  jobLinks: {
+  openSource: [
+    {
+      title: "Open Source Contributor",
+      organisation: "Plumb MCP",
+      dates: "Aug 2026",
+    },
+  ],
+  jobLinks: {},
+  openSourceLinks: {
     "Plumb MCP": "https://github.com/irfantayyab/plumb-mcp/commit/2ef8952",
   },
 } as const satisfies {
@@ -58,5 +61,7 @@ export const resume = {
   links: Readonly<Record<"linkedin" | "github" | "website", ResumeLink>>;
   education: readonly ResumeEntry[];
   experience: readonly ResumeEntry[];
+  openSource: readonly ResumeEntry[];
   jobLinks: Readonly<Record<string, string>>;
+  openSourceLinks: Readonly<Record<string, string>>;
 };

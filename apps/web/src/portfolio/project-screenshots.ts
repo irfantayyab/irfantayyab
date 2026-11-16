@@ -22,7 +22,7 @@ export const projectScreenshots: Readonly<Record<string, Screenshot>> = {
     image: plumb,
     alt: "The fix's commit on GitHub: its message, explaining why selection became pull-based, and the diff of the selection tool's docs.",
   },
-  "Portfolio site": {
+  "irfantayyab.com": {
     image: site,
     alt: "A post on the portfolio site, its title and text in Newsreader on a plain white page.",
   },

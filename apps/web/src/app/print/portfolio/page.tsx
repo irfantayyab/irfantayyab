@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { experienceLinks } from "@/portfolio/experience";
 import { introLine } from "@/portfolio/intro";
 import { resumePath } from "@/portfolio/links";
+import { ProjectName } from "@/portfolio/project-name";
 import { projectScreenshots } from "@/portfolio/project-screenshots";
 import { projects, type Project } from "@/portfolio/projects";
 import { resume } from "@/resume/claims";
@@ -149,7 +150,9 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
       <Label>
         Project {index + 1} of {projects.length}
       </Label>
-      <h2 className="pdf-title mt-3">{project.name}</h2>
+      <h2 className="pdf-title mt-3">
+        <ProjectName project={project} />
+      </h2>
       <p className="pdf-lead mt-2 text-muted">{project.summary}</p>
     </>
   );

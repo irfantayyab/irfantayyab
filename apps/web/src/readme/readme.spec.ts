@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { latestPostCount } from "@/writing/writing";
 import {
-  endMarker,
+  markers,
   postLine,
   ReadmeError,
   type ReadmePost,
-  startMarker,
+  withIntro,
   withPosts,
 } from "./readme";
+
+const { start: startMarker, end: endMarker } = markers("posts");
+const intro = markers("intro");
 
 const post: ReadmePost = {
   title: "A post",
@@ -16,7 +19,11 @@ const post: ReadmePost = {
 };
 
 const readme = [
-  "# Name",
+  intro.start,
+  "",
+  "A stale line.",
+  "",
+  intro.end,
   "",
   "## Latest posts",
   "",
@@ -111,5 +118,30 @@ describe("withPosts", () => {
 
   it("refuses an empty list of posts", () => {
     expect(() => withPosts(readme, [])).toThrow(ReadmeError);
+  });
+});
+
+describe("withIntro", () => {
+  it("replaces only the lines between its own markers", () => {
+    expect(withIntro(readme, "A new line.")).toBe(
+      readme.replace("A stale line.", "A new line."),
+    );
+  });
+
+  it("escapes what Markdown would read in the line", () => {
+    expect(withIntro(readme, "a *b* [c]")).toContain("a \\*b\\* \\[c\\]");
+  });
+
+  it("leaves the posts as they are, and they leave it", () => {
+    const both = withPosts(withIntro(readme, "A new line."), [post]);
+    expect(both).toBe(withIntro(withPosts(readme, [post]), "A new line."));
+    expect(both).toContain("A new line.");
+    expect(both).toContain(postLine(post));
+  });
+
+  it("refuses a README without its markers", () => {
+    expect(() =>
+      withIntro(readme.replace(intro.start, ""), "A new line."),
+    ).toThrow(/<!-- intro:start --> once, and holds it 0 times/);
   });
 });

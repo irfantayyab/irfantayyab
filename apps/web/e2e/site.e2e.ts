@@ -22,7 +22,7 @@ import { pageColors, textColors } from "../src/app/theme";
 import { experienceLinks } from "../src/portfolio/experience";
 import { introLine } from "../src/portfolio/intro";
 import { portfolioPdfPath, resumePath } from "../src/portfolio/links";
-import { projects } from "../src/portfolio/projects";
+import { projectHeading, projects } from "../src/portfolio/projects";
 import { resume } from "../src/resume/claims";
 import { resumePdfPath } from "../src/resume/source";
 import { absoluteUrl, siteUrl } from "../src/site";
@@ -193,6 +193,10 @@ test.describe("without JavaScript", () => {
       });
       await expect(handle).toHaveAttribute("href", resume.links.github.url);
       await expect(handle).toHaveAttribute("target", "_blank");
+      const sameTab = await page
+        .locator('a[href^="http"]:not([target="_blank"])')
+        .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+      expect(sameTab, "links leaving the site in the same tab").toEqual([]);
     });
   }
 
@@ -249,11 +253,14 @@ test.describe("without JavaScript", () => {
       "Writing",
       "Contact",
     ]);
-    const projects = page.locator("#projects ~ div > article");
-    const count = await projects.count();
+    const blocks = page.locator("#projects ~ div > article");
+    const count = await blocks.count();
     expect(count).toBeGreaterThanOrEqual(3);
     expect(count).toBeLessThanOrEqual(5);
-    for (const project of await projects.all()) {
+    await expect(blocks.getByRole("heading", { level: 3 })).toHaveText(
+      projects.map(projectHeading),
+    );
+    for (const project of await blocks.all()) {
       await expect(project.getByRole("heading", { level: 3 })).toHaveCount(1);
       await expect(project).toContainText("The problem.");
       await expect(project).toContainText("My part.");
@@ -1037,12 +1044,12 @@ test.describe("the portfolio PDF", () => {
       resume.headline,
       introLine,
       resume.email,
-      ...projects.flatMap(({ name, summary, problem, part, stack }) => [
-        name,
-        summary,
-        problem,
-        part,
-        ...stack,
+      ...projects.flatMap((project) => [
+        projectHeading(project),
+        project.summary,
+        project.problem,
+        project.part,
+        ...project.stack,
       ]),
       ...resume.experience.flatMap(({ title, organisation, dates }) => [
         `${title}, ${organisation}`,
