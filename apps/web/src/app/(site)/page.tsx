@@ -71,7 +71,7 @@ export default async function HomePage() {
         <h2 id="projects" className="text-2xl font-semibold tracking-tight">
           Projects
         </h2>
-        <div className="mt-8 space-y-14">
+        <div className="mt-8 divide-y divide-underline">
           {projects.map((project) => (
             <ProjectBlock key={project.name} project={project} />
           ))}

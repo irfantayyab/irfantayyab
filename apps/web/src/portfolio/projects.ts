@@ -12,7 +12,14 @@ export type Project = {
   part: string;
   stack: readonly string[];
   links: readonly ProjectLink[];
+  openSource?: boolean;
 };
+
+export const openSourcePrefix = "Open source:";
+
+export function projectHeading({ name, openSource }: Project) {
+  return openSource ? `${openSourcePrefix} ${name}` : name;
+}
 
 export const projects: readonly Project[] = [
   {
@@ -46,7 +53,7 @@ export const projects: readonly Project[] = [
   {
     name: "Plumb MCP",
     summary:
-      "An open-source MCP server that hands Figma designs to AI coding tools, without rate limits.",
+      "An MCP server that hands Figma designs to AI coding tools, without rate limits.",
     problem:
       "Clicking a large frame froze the Figma file. The plugin serialized the selected node’s whole subtree on every selection change, whether anything had asked for it or not.",
     part: "I made selection pull-based. The plugin now reports only the node’s id on a click, and the tree is walked, and cached, only when a tool asks for it, the way it already fetched a node by id. Callers get the same result as before, and the fix merged with all 955 tests passing.",
@@ -58,9 +65,10 @@ export const projects: readonly Project[] = [
       "Vitest",
     ],
     links: [{ label: "The fix", url: plumbFixUrl }],
+    openSource: true,
   },
   {
-    name: "Portfolio site",
+    name: "irfantayyab.com",
     summary:
       "A portfolio and a blog, served as static files, with its claims held to the resume by a test.",
     problem:
