@@ -1,7 +1,5 @@
 import type { Root } from "hast";
 import { type Components, toJsxRuntime } from "hast-util-to-jsx-runtime";
-import type { ComponentProps } from "react";
-import { linkTarget } from "@/app/link-target";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { CodeBlock } from "./code-block";
 import { codeTag, diagramTag } from "./render";
@@ -29,12 +27,7 @@ function Diagram({
   );
 }
 
-function PostLink(props: ComponentProps<"a">) {
-  return <a {...props} {...linkTarget(props.href ?? "")} />;
-}
-
 const components = {
-  a: PostLink,
   [diagramTag]: Diagram,
   [codeTag]: CodeBlock,
 } as Partial<Components>;

@@ -1,12 +1,8 @@
 import { formatDate } from "@/writing/date";
 import { latestPostCount } from "@/writing/writing";
 
-export function markers(section: string) {
-  return {
-    start: `<!-- ${section}:start -->`,
-    end: `<!-- ${section}:end -->`,
-  };
-}
+export const startMarker = "<!-- posts:start -->";
+export const endMarker = "<!-- posts:end -->";
 
 export type ReadmePost = {
   title: string;
@@ -49,34 +45,18 @@ function markerLine(lines: string[], marker: string) {
   return found[0];
 }
 
-function withSection(readme: string, section: string, body: string[]) {
-  const { start: startMarker, end: endMarker } = markers(section);
+export function withPosts(readme: string, posts: readonly ReadmePost[]) {
+  if (posts.length === 0) {
+    throw new ReadmeError("there are no posts to list");
+  }
   const lines = readme.split("\n");
   const start = markerLine(lines, startMarker);
   const end = markerLine(lines, endMarker);
   if (end < start) {
     throw new ReadmeError(`${endMarker} comes before ${startMarker}`);
   }
-  return [
-    ...lines.slice(0, start + 1),
-    "",
-    ...body,
-    "",
-    ...lines.slice(end),
-  ].join("\n");
-}
-
-export function withIntro(readme: string, intro: string) {
-  return withSection(readme, "intro", [markdownText(intro)]);
-}
-
-export function withPosts(readme: string, posts: readonly ReadmePost[]) {
-  if (posts.length === 0) {
-    throw new ReadmeError("there are no posts to list");
-  }
-  return withSection(
-    readme,
-    "posts",
-    posts.slice(0, latestPostCount).map(postLine),
+  const section = ["", ...posts.slice(0, latestPostCount).map(postLine), ""];
+  return [...lines.slice(0, start + 1), ...section, ...lines.slice(end)].join(
+    "\n",
   );
 }
