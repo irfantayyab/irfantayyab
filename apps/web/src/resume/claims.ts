@@ -30,7 +30,7 @@ export const resume = {
     {
       title: "Software Engineer",
       organisation: "AmentoTech Pvt Ltd",
-      dates: "Nov 2025 – Oct 2026",
+      dates: "Nov 2025 – Nov 2026",
     },
     {
       title: "MERN Stack Developer",

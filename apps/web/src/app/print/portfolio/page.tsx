@@ -198,7 +198,7 @@ function ExperiencePage() {
   return (
     <Page number={projects.length + 2}>
       <div className="px-20 pt-16">
-        <Label>From the resume</Label>
+        <Label>Background</Label>
         <h2 className="pdf-title mt-3">Experience</h2>
         <ul className="mt-10 border-t border-underline">
           {resume.experience.map(({ title, organisation, dates }) => {
@@ -217,17 +217,6 @@ function ExperiencePage() {
             );
           })}
         </ul>
-        <div className="mt-10">
-          <Label>Education</Label>
-          <ul className="pdf-lead mt-3">
-            {resume.education.map(({ title, organisation, dates }) => (
-              <li key={`${title}, ${organisation}`}>
-                <span className="font-semibold">{title}</span>, {organisation}
-                {dates ? <span className="text-muted"> · {dates}</span> : null}
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </Page>
   );

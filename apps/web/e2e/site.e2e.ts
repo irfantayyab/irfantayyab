@@ -41,6 +41,23 @@ import type { Element, Root } from "hast";
 
 const outDir = fileURLToPath(new URL("../out/", import.meta.url));
 
+const portfolioFacts = [
+  resume.name,
+  resume.headline,
+  introLine,
+  resume.email,
+  ...projects.flatMap((project) => [
+    projectHeading(project),
+    project.summary,
+    project.problem,
+    project.part,
+  ]),
+  ...resume.experience.flatMap(({ title, organisation, dates }) => [
+    `${title}, ${organisation}`,
+    dates,
+  ]),
+];
+
 const pages = readdirSync(outDir, { recursive: true, encoding: "utf8" })
   .map((file) => file.replaceAll("\\", "/"))
   .filter((file) => file.endsWith(".html"))
@@ -279,6 +296,14 @@ test.describe("without JavaScript", () => {
           ),
       ),
     );
+  });
+
+  test("the home page states every fact the portfolio PDF does, but the stacks", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const flat = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+    expect(portfolioFacts.filter((fact) => !flat.includes(fact))).toEqual([]);
   });
 
   test("the home page links GitHub, LinkedIn, email and the resume", async ({
@@ -1040,24 +1065,8 @@ test.describe("the portfolio PDF", () => {
     const { text } = await extractText(pdf, { mergePages: true });
     const flat = text.replace(/\s+/g, " ");
     const facts = [
-      resume.name,
-      resume.headline,
-      introLine,
-      resume.email,
-      ...projects.flatMap((project) => [
-        projectHeading(project),
-        project.summary,
-        project.problem,
-        project.part,
-        ...project.stack,
-      ]),
-      ...resume.experience.flatMap(({ title, organisation, dates }) => [
-        `${title}, ${organisation}`,
-        dates,
-      ]),
-      ...resume.education.map(
-        ({ title, organisation }) => `${title}, ${organisation}`,
-      ),
+      ...portfolioFacts,
+      ...projects.flatMap(({ stack }) => stack),
     ];
     expect(facts.filter((fact) => !flat.includes(fact))).toEqual([]);
   });
