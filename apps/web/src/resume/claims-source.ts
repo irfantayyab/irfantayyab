@@ -14,7 +14,9 @@ export type Claims = {
   links: Record<"linkedin" | "github" | "website", ResumeLink>;
   education: ResumeEntry[];
   experience: ResumeEntry[];
+  openSource: ResumeEntry[];
   jobLinks: Record<string, string>;
+  openSourceLinks: Record<string, string>;
 };
 
 function linkKind(url: string): keyof Claims["links"] {
@@ -34,6 +36,28 @@ function sectionEntries(tex: ResumeTex, title: string): ResumeEntry[] {
     throw new ClaimsError(`The resume has no "${title}" section with entries`);
   }
   return section.entries;
+}
+
+function sameEntry(
+  a: Pick<ResumeEntry, "title" | "organisation">,
+  b: Pick<ResumeEntry, "title" | "organisation">,
+): boolean {
+  return a.title === b.title && a.organisation === b.organisation;
+}
+
+function entryLinks(
+  tex: ResumeTex,
+  entries: ResumeEntry[],
+): Record<string, string> {
+  const found: Record<string, string> = {};
+  for (const job of tex.jobLinks) {
+    const [url] = job.urls;
+    const { organisation } = job;
+    if (url && entries.some((entry) => sameEntry(entry, job))) {
+      found[organisation] = url;
+    }
+  }
+  return found;
 }
 
 export function claimsFrom(tex: ResumeTex): Claims {
@@ -67,26 +91,31 @@ export function claimsFrom(tex: ResumeTex): Claims {
     );
   }
 
-  const experience = sectionEntries(tex, "Work Experience");
-  const jobLinks: Record<string, string> = {};
-  for (const { title, organisation, urls } of tex.jobLinks) {
-    const [url] = urls;
-    const isJob = experience.some(
-      (entry) => entry.title === title && entry.organisation === organisation,
+  const education = sectionEntries(tex, "Education");
+  const work = sectionEntries(tex, "Work Experience");
+  const openSource = tex.contributions;
+  const misplaced = openSource.filter(
+    (contribution) => !work.some((entry) => sameEntry(entry, contribution)),
+  );
+  if (misplaced.length > 0) {
+    throw new ClaimsError(
+      `A \\contribution belongs under Work Experience: ${misplaced.map(({ organisation }) => organisation).join(", ")}`,
     );
-    if (url && isJob) {
-      jobLinks[organisation] = url;
-    }
   }
+  const experience = work.filter(
+    (entry) => !openSource.some((contribution) => sameEntry(entry, contribution)),
+  );
 
   return {
     name: tex.name,
     headline: tex.headline,
     email,
     links: { linkedin, github, website },
-    education: sectionEntries(tex, "Education"),
+    education,
     experience,
-    jobLinks,
+    openSource,
+    jobLinks: entryLinks(tex, experience),
+    openSourceLinks: entryLinks(tex, openSource),
   };
 }
 
@@ -130,7 +159,9 @@ export const resume = ${emit(claims, "")} as const satisfies {
   links: Readonly<Record<"linkedin" | "github" | "website", ResumeLink>>;
   education: readonly ResumeEntry[];
   experience: readonly ResumeEntry[];
+  openSource: readonly ResumeEntry[];
   jobLinks: Readonly<Record<string, string>>;
+  openSourceLinks: Readonly<Record<string, string>>;
 };
 `;
 }

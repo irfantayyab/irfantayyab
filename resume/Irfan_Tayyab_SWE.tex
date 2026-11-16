@@ -196,6 +196,11 @@
   {\semiboldfont\color{black}#1}, #2\hfill #3\par
 }
 
+% \contribution{Role}{Project}{Dates}
+%  Set exactly like \job. The site reads it as open-source work, not a job,
+%  so it is left out of the site's Experience.
+\newcommand{\contribution}{\job}
+
 % skills list: a label column (bold) with the items wrapping beside it.
 %  The label column is as wide as the widest label; spacing between groups
 %  comes from \skillgap, wrapped lines use normal line spacing.
@@ -291,7 +296,7 @@ and low-confidence queries passed to a human. Built with a coding-agent harness.
         custom skills plugin.
 \end{itemize}
 
-\job{Open Source Contributor}{Plumb MCP}{Aug 2026}
+\contribution{Open Source Contributor}{Plumb MCP}{Aug 2026}
 \begin{itemize}
   \item Fixed a Figma \textbf{UI freeze} in Plumb MCP's plugin bridge by moving selection
         sync from push to on-demand pull, removing a full node-tree walk on every click.

@@ -88,6 +88,7 @@ describe("parseResumeTex", () => {
           ],
         },
       ],
+      contributions: [],
       jobLinks: [
         { title: "BSc", organisation: "Some University", urls: [] },
         { title: "Engineer", organisation: "R&D Ltd", urls: [] },
@@ -118,6 +119,30 @@ describe("parseResumeTex", () => {
       },
       { title: "Intern", organisation: "Initech", urls: [] },
     ]);
+  });
+
+  it("reads a contribution as an entry of its section, in place, and lists it apart", () => {
+    const tex = resumeWith(String.raw`
+\section*{Work Experience}
+\job{Engineer}{Acme}{2024}
+\contribution{Contributor}{Some Tool}{2025}
+\begin{itemize}
+  \item Fixed it (\href{https://github.com/ada/tool/commit/1}{commit}).
+\end{itemize}
+\job{Intern}{Initech}{2023}
+`);
+    const { sections, contributions, jobLinks } = parseResumeTex(tex);
+    expect(sections[0]?.entries.map(({ organisation }) => organisation)).toEqual(
+      ["Acme", "Some Tool", "Initech"],
+    );
+    expect(contributions).toEqual([
+      { title: "Contributor", organisation: "Some Tool", dates: "2025" },
+    ]);
+    expect(jobLinks[1]).toEqual({
+      title: "Contributor",
+      organisation: "Some Tool",
+      urls: ["https://github.com/ada/tool/commit/1"],
+    });
   });
 
   it("ignores jobs in comments and in the preamble", () => {

@@ -4,7 +4,7 @@ const github = resume.links.github.url;
 
 export const portfolioRepoUrl = `${github}/irfantayyab`;
 
-export const plumbFixUrl = resume.jobLinks["Plumb MCP"];
+export const plumbFixUrl = resume.openSourceLinks["Plumb MCP"];
 
 export const portfolioPdfPath = "/portfolio.pdf";
 

@@ -26,6 +26,7 @@ export type ResumeTex = {
   emails: string[];
   links: ResumeLink[];
   sections: ResumeSection[];
+  contributions: ResumeEntry[];
   jobLinks: ResumeJobLinks[];
 };
 
@@ -140,6 +141,7 @@ export function parseResumeTex(source: string): ResumeTex {
   const body = tex.slice(begin);
 
   const sections: ResumeSection[] = [];
+  const contributions: ResumeEntry[] = [];
   const jobs: { title: string; organisation: string; start: number }[] = [];
   const spans: { title: string; organisation: string; text: string }[] = [];
   const closeJob = (end: number) => {
@@ -148,12 +150,13 @@ export function parseResumeTex(source: string): ResumeTex {
       spans.push({ ...job, text: body.slice(job.start, end) });
     }
   };
-  const commands = /\\section\*(?=\{)|\\job(?=\{)/g;
+  const commands = /\\section\*(?=\{)|\\job(?=\{)|\\contribution(?=\{)/g;
   for (let match = commands.exec(body); match; match = commands.exec(body)) {
     closeJob(match.index);
     let end = match.index + match[0].length;
     const groups: string[] = [];
-    const count = match[0] === "\\job" ? 3 : 1;
+    const isEntry = match[0] !== "\\section*";
+    const count = isEntry ? 3 : 1;
     while (groups.length < count) {
       const group = readGroup(body, end);
       groups.push(texToText(group.value));
@@ -161,13 +164,16 @@ export function parseResumeTex(source: string): ResumeTex {
     }
     commands.lastIndex = end;
 
-    if (match[0] === "\\job") {
+    if (isEntry) {
       const [title = "", organisation = "", dates = ""] = groups;
       const section = sections.at(-1);
       if (!section) {
-        throw new Error(`\\job{${title}} comes before any \\section*`);
+        throw new Error(`${match[0]}{${title}} comes before any \\section*`);
       }
       section.entries.push({ title, organisation, dates });
+      if (match[0] === "\\contribution") {
+        contributions.push({ title, organisation, dates });
+      }
       jobs.push({ title, organisation, start: end });
     } else {
       sections.push({ title: groups[0] ?? "", entries: [] });
@@ -182,6 +188,7 @@ export function parseResumeTex(source: string): ResumeTex {
     emails: readEmails(body),
     links: readLinks(body),
     sections: sections.filter((section) => section.entries.length > 0),
+    contributions,
     jobLinks: spans.map(({ title, organisation, text }) => ({
       title,
       organisation,
