@@ -33,7 +33,7 @@ export const resume = {
       dates: "Nov 2025 – Oct 2026",
     },
     {
-      title: "MERN Stack Engineer",
+      title: "MERN Stack Developer",
       organisation: "Sprouto Group",
       dates: "Mar 2025 – Nov 2025",
     },
