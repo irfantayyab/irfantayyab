@@ -1,14 +1,15 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
+import { introLine } from "@/portfolio/intro";
 import { productionUrl } from "@/production-url";
 import { loadWritingFrom } from "@/writing/load";
 import { writingDir } from "@/writing/source";
 import { postPath } from "@/writing/writing";
-import { withPosts } from "./readme";
+import { withIntro, withPosts } from "./readme";
 import { readmePath } from "./source";
 
 describe("the profile README", () => {
-  it("lists the latest posts, written by pnpm readme", async () => {
+  it("holds the intro and the latest posts, written by pnpm readme", async () => {
     const [readme, { posts }] = await Promise.all([
       readFile(readmePath, "utf8"),
       loadWritingFrom(writingDir),
@@ -18,6 +19,8 @@ describe("the profile README", () => {
       url: `${productionUrl}${postPath(slug)}`,
       date,
     }));
-    await expect(withPosts(readme, listed)).toMatchFileSnapshot(readmePath);
+    await expect(
+      withIntro(withPosts(readme, listed), introLine),
+    ).toMatchFileSnapshot(readmePath);
   });
 });

@@ -193,6 +193,10 @@ test.describe("without JavaScript", () => {
       });
       await expect(handle).toHaveAttribute("href", resume.links.github.url);
       await expect(handle).toHaveAttribute("target", "_blank");
+      const sameTab = await page
+        .locator('a[href^="http"]:not([target="_blank"])')
+        .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+      expect(sameTab, "links leaving the site in the same tab").toEqual([]);
     });
   }
 
