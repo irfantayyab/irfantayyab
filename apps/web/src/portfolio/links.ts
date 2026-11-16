@@ -9,3 +9,5 @@ export const plumbFixUrl = `${github}/plumb-mcp/commit/2ef8952`;
 export const portfolioPdfPath = "/portfolio.pdf";
 
 export const resumePath = "/resume.pdf";
+
+export const javascriptInfoUrl = "https://javascript.info";

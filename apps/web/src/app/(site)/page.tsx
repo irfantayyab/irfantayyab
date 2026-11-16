@@ -3,6 +3,8 @@ import Link from "next/link";
 import { experienceLinks } from "@/portfolio/experience";
 import { introLine } from "@/portfolio/intro";
 import {
+  javascriptInfoUrl,
+  plumbFixUrl,
   portfolioPdfPath,
   portfolioRepoUrl,
   resumePath,
@@ -41,6 +43,19 @@ export default async function HomePage() {
 
       <div className="mt-10 space-y-5">
         <p>{introLine}</p>
+        <p>
+          I taught myself to build for the web from what others shared for free:
+          open-source code, documentation, answers and articles, and most of all{" "}
+          <a href={javascriptInfoUrl} {...linkTarget(javascriptInfoUrl)}>
+            javascript.info
+          </a>
+          , where I learned JavaScript. I try to give back in kind, by
+          contributing to open-source projects like{" "}
+          <a href={plumbFixUrl} {...linkTarget(plumbFixUrl)}>
+            Plumb MCP
+          </a>{" "}
+          and writing up what I learn.
+        </p>
         <p>
           I care about software that stays easy to change: typed code, real
           tests, and checks that pass before anything ships. This site is built
