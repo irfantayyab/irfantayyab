@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { pageMetadata } from "@/app/page-metadata";
+import { resume } from "@/resume/claims";
 import { loadWriting } from "@/writing/load";
 import { PostBody } from "@/writing/post-body";
 import { PostDate } from "@/writing/post-date";
@@ -56,6 +57,8 @@ export default async function PostPage({
         {post.title}
       </h1>
       <p className="mt-2 font-sans text-base text-muted">
+        By <Link href="/">{resume.name}</Link>
+        {" · "}
         <PostDate day={post.date} />
         {post.updated ? (
           <>

@@ -1,6 +1,22 @@
 export const mainId = "main";
 
-export const pageIds: ReadonlySet<string> = new Set([mainId]);
+export const homeSectionIds = {
+  projects: "projects",
+  experience: "experience",
+} as const;
+
+export const projectTabIds = [
+  "featured",
+  "amentotech",
+  "sprouto",
+  "codeflamme",
+  "open-source",
+  "personal",
+] as const;
+
+export type ProjectTabId = (typeof projectTabIds)[number];
+
+export const pageIds: ReadonlySet<string> = new Set([mainId, ...projectTabIds]);
 
 export const diagramIdPrefix = "diagram-";
 

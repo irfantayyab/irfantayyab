@@ -36,6 +36,9 @@ describe("diagramImageFile", () => {
 describe("isPageId", () => {
   it.each([
     "main",
+    "featured",
+    "open-source",
+    "personal",
     "diagram-light-0",
     "diagram-dark-12",
     "diagram-light-3_x",
@@ -47,6 +50,7 @@ describe("isPageId", () => {
 
   it.each([
     "main-points",
+    "featured-work",
     "diagram-heavy-posts",
     "diagram-light",
     "diagrams",
