@@ -942,10 +942,16 @@ test.describe("with JavaScript", () => {
     const stickingPoint = await bar.evaluate(
       (element) => element.getBoundingClientRect().top + window.scrollY,
     );
-    for (const tab of projectTabs) {
+    const [featured, ...others] = projectTabs;
+    for (const tab of others) {
+      await bar.getByRole("link", { name: featured!.label }).click();
+      await expectTabShown(page, featured!);
       await page.evaluate(
         (top) => window.scrollTo(0, top),
         stickingPoint + 200,
+      );
+      expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(
+        stickingPoint,
       );
       await bar.getByRole("link", { name: tab.label }).click();
       await expectTabShown(page, tab);
