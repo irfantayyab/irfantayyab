@@ -86,7 +86,7 @@ export function ContactLinks({ className = "" }: { className?: string }) {
           <a
             href={url}
             {...linkTarget(url)}
-            className="flex min-w-12 flex-col items-center gap-1 py-1 text-muted no-underline hover:text-ink"
+            className="flex flex-col items-center gap-1 py-1 text-muted no-underline hover:text-ink sm:min-w-12"
           >
             {icon}
             <span className="font-sans text-xs whitespace-nowrap">{label}</span>

@@ -29,7 +29,7 @@ export default function HomePage() {
         <p className="mt-2 font-sans text-base text-muted sm:col-start-1 sm:row-start-2">
           {resume.headline}
         </p>
-        <ContactLinks className="-mx-3 mt-4 justify-between gap-x-1 sm:col-start-2 sm:row-start-1 sm:mx-0 sm:mt-0 sm:justify-start sm:gap-x-4 sm:self-center" />
+        <ContactLinks className="mt-4 justify-between gap-x-1 sm:col-start-2 sm:row-start-1 sm:mt-0 sm:justify-start sm:gap-x-4 sm:self-center" />
       </div>
 
       <div className="mt-10 space-y-5">

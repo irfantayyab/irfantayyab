@@ -484,6 +484,22 @@ test.describe("without JavaScript", () => {
       contact.boundingBox(),
     ]);
     expect(phoneBox!.y).toBeGreaterThan(headlineBox!.y + headlineBox!.height);
+    for (const width of [320, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      const [main, first, last] = await Promise.all([
+        page.locator("main").boundingBox(),
+        contact.getByRole("link").first().boundingBox(),
+        contact.getByRole("link").last().boundingBox(),
+      ]);
+      expect(
+        Math.abs(first!.x - main!.x),
+        `${width} px: left edge`,
+      ).toBeLessThan(1);
+      expect(
+        Math.abs(last!.x + last!.width - (main!.x + main!.width)),
+        `${width} px: right edge`,
+      ).toBeLessThan(1);
+    }
   });
 
   test("every screenshot has alt text and loads lazily", async ({ page }) => {
