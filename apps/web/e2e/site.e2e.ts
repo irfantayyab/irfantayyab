@@ -500,7 +500,11 @@ test.describe("without JavaScript", () => {
       expect(
         last!.x + last!.width,
         `${width} px: right edge`,
-      ).toBeLessThanOrEqual(main!.x + main!.width + 1);
+      ).toBeLessThanOrEqual(width);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+        `${width} px: no sideways scroll`,
+      ).toBeLessThanOrEqual(width);
       expect(
         Math.round(second!.x - (first!.x + first!.width)),
         `${width} px: gap`,
