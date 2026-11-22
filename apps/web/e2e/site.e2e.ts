@@ -933,7 +933,7 @@ test.describe("with JavaScript", () => {
     expect((await bar.boundingBox())?.y).toBeCloseTo(0, 0);
   });
 
-  test("changing to any tab while scrolled past the bar puts the bar at the top", async ({
+  test("changing to any tab while scrolled past the bar puts the bar at the top, or as near as the page allows", async ({
     page,
   }) => {
     await page.goto("/");
@@ -950,8 +950,16 @@ test.describe("with JavaScript", () => {
       await bar.getByRole("link", { name: tab.label }).click();
       await expectTabShown(page, tab);
       await expect
-        .poll(async () => Math.round((await bar.boundingBox())?.y ?? -1))
-        .toBe(0);
+        .poll(async () => {
+          const top = Math.round((await bar.boundingBox())?.y ?? -1);
+          const atEnd = await page.evaluate(
+            () =>
+              Math.ceil(window.scrollY + window.innerHeight) >=
+              document.documentElement.scrollHeight - 1,
+          );
+          return top === 0 || (top > 0 && atEnd);
+        })
+        .toBe(true);
     }
   });
 

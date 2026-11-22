@@ -82,7 +82,6 @@
 
   .project-panel {
     display: none;
-    min-height: calc(100dvh - var(--tab-bar-height));
   }
 
   .project-panel:target,
