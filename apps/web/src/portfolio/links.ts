@@ -9,5 +9,3 @@ export const plumbFixUrl = resume.openSourceLinks["Plumb MCP"];
 export const portfolioPdfPath = "/portfolio.pdf";
 
 export const resumePath = "/resume.pdf";
-
-export const javascriptInfoUrl = "https://javascript.info";

@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import { experienceLinks } from "@/portfolio/experience";
 import { introLine } from "@/portfolio/intro";
-import {
-  javascriptInfoUrl,
-  plumbFixUrl,
-  portfolioRepoUrl,
-} from "@/portfolio/links";
+import { plumbFixUrl, portfolioRepoUrl } from "@/portfolio/links";
 import { ContactLinks } from "@/portfolio/contact-links";
 import { ProjectTabs } from "@/portfolio/project-tabs";
 import { jobLinks } from "@/portfolio/tabs";
@@ -29,23 +25,20 @@ export default function HomePage() {
         <p className="mt-2 font-sans text-base text-muted sm:col-start-1 sm:row-start-2">
           {resume.headline}
         </p>
-        <ContactLinks className="mt-4 justify-between gap-x-1 sm:col-start-2 sm:row-start-1 sm:mt-0 sm:justify-start sm:gap-x-4 sm:self-center" />
+        <ContactLinks className="mt-4 gap-x-4 min-[360px]:gap-x-6 sm:col-start-2 sm:row-start-1 sm:mt-0 sm:gap-x-4 sm:self-center" />
       </div>
 
       <div className="mt-10 space-y-5">
         <p>{introLine}</p>
         <p>
-          I taught myself to build for the web from what others shared for free:
-          open-source code, documentation, answers and articles, and most of all{" "}
-          <a href={javascriptInfoUrl} {...linkTarget(javascriptInfoUrl)}>
-            javascript.info
-          </a>
-          , where I learned JavaScript. I try to give back in kind, by
-          contributing to open-source projects like{" "}
+          I’ve built for education, e-commerce, freelance marketplaces,
+          streaming and more, along with marketing sites for an agency and a
+          property firm. I’m also passionate about open source, and contribute
+          where I can, like my fix to{" "}
           <a href={plumbFixUrl} {...linkTarget(plumbFixUrl)}>
             Plumb MCP
-          </a>{" "}
-          and writing up what I learn.
+          </a>
+          .
         </p>
         <p>
           I care about software that stays easy to change: typed code, real

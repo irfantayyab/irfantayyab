@@ -484,21 +484,27 @@ test.describe("without JavaScript", () => {
       contact.boundingBox(),
     ]);
     expect(phoneBox!.y).toBeGreaterThan(headlineBox!.y + headlineBox!.height);
-    for (const width of [320, 390]) {
+    for (const width of [320, 390, 630]) {
       await page.setViewportSize({ width, height: 844 });
-      const [main, first, last] = await Promise.all([
+      const links = contact.getByRole("link");
+      const [main, first, second, last] = await Promise.all([
         page.locator("main").boundingBox(),
-        contact.getByRole("link").first().boundingBox(),
-        contact.getByRole("link").last().boundingBox(),
+        links.nth(0).boundingBox(),
+        links.nth(1).boundingBox(),
+        links.last().boundingBox(),
       ]);
       expect(
         Math.abs(first!.x - main!.x),
         `${width} px: left edge`,
       ).toBeLessThan(1);
       expect(
-        Math.abs(last!.x + last!.width - (main!.x + main!.width)),
+        last!.x + last!.width,
         `${width} px: right edge`,
-      ).toBeLessThan(1);
+      ).toBeLessThanOrEqual(main!.x + main!.width + 1);
+      expect(
+        Math.round(second!.x - (first!.x + first!.width)),
+        `${width} px: gap`,
+      ).toBe(width < 360 ? 16 : 24);
     }
   });
 
