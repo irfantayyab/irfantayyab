@@ -49,6 +49,52 @@
 }
 
 @layer components {
+  .project-tabs {
+    --tab-bar-height: 3rem;
+  }
+
+  .project-tab-bar {
+    height: var(--tab-bar-height);
+  }
+
+  .project-tab-link {
+    display: inline-flex;
+    height: 100%;
+    align-items: center;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    color: var(--muted);
+    text-decoration-line: none;
+  }
+
+  .project-tab-link:hover {
+    color: var(--ink);
+  }
+
+  .project-tab-link:focus-visible {
+    outline-offset: -2px;
+  }
+
+  .project-panel,
+  .project-block {
+    scroll-margin-top: var(--tab-bar-height);
+  }
+
+  .project-panel {
+    display: none;
+  }
+
+  .project-panel:target,
+  .project-panel:has(:target),
+  .project-tabs:not(:has(.project-panel:target, .project-panel :target))
+    .project-panel[data-default] {
+    display: block;
+  }
+
+  .scroll-row {
+    scrollbar-width: none;
+  }
+
   .post-body > * + * {
     margin-top: 1.25em;
   }

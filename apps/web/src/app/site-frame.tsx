@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { resume } from "@/resume/claims";
 import { Nav } from "./nav";
 import { mainId } from "./page-ids";
 
@@ -15,15 +14,7 @@ export function SiteFrame({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <div className="mx-auto box-content max-w-150 px-4">
-        <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 pt-10 pb-12 sm:pt-16">
-          <a
-            href={resume.links.github.url}
-            target="_blank"
-            rel="me noopener"
-            className="font-semibold text-ink no-underline hover:underline"
-          >
-            @irfantayyab
-          </a>
+        <header className="pt-10 pb-12 sm:pt-16">
           <Nav />
         </header>
         <main id={mainId} tabIndex={-1} className="pb-24">

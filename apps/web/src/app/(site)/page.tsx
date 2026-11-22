@@ -1,60 +1,44 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { experienceLinks } from "@/portfolio/experience";
 import { introLine } from "@/portfolio/intro";
-import {
-  javascriptInfoUrl,
-  plumbFixUrl,
-  portfolioPdfPath,
-  portfolioRepoUrl,
-  resumePath,
-} from "@/portfolio/links";
-import { ProjectBlock } from "@/portfolio/project-block";
-import { projects } from "@/portfolio/projects";
+import { plumbFixUrl, portfolioRepoUrl } from "@/portfolio/links";
+import { ContactLinks } from "@/portfolio/contact-links";
+import { ProjectTabs } from "@/portfolio/project-tabs";
+import { jobLinks } from "@/portfolio/tabs";
 import { resume } from "@/resume/claims";
-import { loadWriting } from "@/writing/load";
-import { PostList } from "@/writing/post-list";
-import { latestPostCount } from "@/writing/writing";
 import { linkTarget } from "@/app/link-target";
-import { pageMetadata, siteDescription } from "@/app/page-metadata";
+import { homeSectionIds } from "@/app/page-ids";
+import { homeDescription, pageMetadata } from "@/app/page-metadata";
 
 export const metadata: Metadata = pageMetadata({
   path: "/",
-  description: siteDescription,
+  description: homeDescription,
 });
 
-const contactLinks = [
-  { label: "GitHub", url: resume.links.github.url },
-  { label: "LinkedIn", url: resume.links.linkedin.url },
-  { label: resume.email, url: `mailto:${resume.email}` },
-  { label: "Resume (PDF)", url: resumePath },
-  { label: "Portfolio (PDF)", url: portfolioPdfPath },
-];
-
-export default async function HomePage() {
-  const { posts } = await loadWriting();
-  const latest = posts.slice(0, latestPostCount);
+export default function HomePage() {
   return (
     <>
-      <h1 className="text-4xl/tight font-semibold tracking-tight">
-        {resume.name}
-      </h1>
-      <p className="mt-2 font-sans text-base text-muted">{resume.headline}</p>
+      <div className="grid gap-x-6 sm:grid-cols-[1fr_auto]">
+        <h1 className="text-4xl/tight font-semibold tracking-tight sm:col-start-1 sm:row-start-1">
+          {resume.name}
+        </h1>
+        <p className="mt-2 font-sans text-base text-muted sm:col-start-1 sm:row-start-2">
+          {resume.headline}
+        </p>
+        <ContactLinks className="mt-4 gap-x-4 min-[360px]:gap-x-6 sm:col-start-2 sm:row-start-1 sm:mt-0 sm:gap-x-4 sm:self-center" />
+      </div>
 
       <div className="mt-10 space-y-5">
         <p>{introLine}</p>
         <p>
-          I taught myself to build for the web from what others shared for free:
-          open-source code, documentation, answers and articles, and most of all{" "}
-          <a href={javascriptInfoUrl} {...linkTarget(javascriptInfoUrl)}>
-            javascript.info
-          </a>
-          , where I learned JavaScript. I try to give back in kind, by
-          contributing to open-source projects like{" "}
+          I’ve built for education, e-commerce, freelance marketplaces,
+          streaming and more, along with marketing sites for an agency and a
+          property firm. I’m also passionate about open source, and contribute
+          where I can, like my fix to{" "}
           <a href={plumbFixUrl} {...linkTarget(plumbFixUrl)}>
             Plumb MCP
-          </a>{" "}
-          and writing up what I learn.
+          </a>
+          .
         </p>
         <p>
           I care about software that stays easy to change: typed code, real
@@ -63,28 +47,23 @@ export default async function HomePage() {
           <a href={portfolioRepoUrl} {...linkTarget(portfolioRepoUrl)}>
             GitHub
           </a>
-          , and the <a href={resumePath}>resume is a PDF</a> to read or save.
+          .
         </p>
       </div>
 
-      <section aria-labelledby="projects" className="mt-16">
-        <h2 id="projects" className="text-2xl font-semibold tracking-tight">
-          Projects
-        </h2>
-        <div className="mt-8 divide-y divide-underline">
-          {projects.map((project) => (
-            <ProjectBlock key={project.name} project={project} />
-          ))}
-        </div>
-      </section>
-
-      <section aria-labelledby="experience" className="mt-16">
-        <h2 id="experience" className="text-2xl font-semibold tracking-tight">
+      <section aria-labelledby={homeSectionIds.experience} className="mt-16">
+        <h2
+          id={homeSectionIds.experience}
+          className="text-2xl font-semibold tracking-tight"
+        >
           Experience
         </h2>
         <ul className="mt-6 space-y-3">
           {resume.experience.map(({ title, organisation, dates }) => {
-            const link = experienceLinks[organisation];
+            const { name, host } = jobLinks(
+              organisation,
+              experienceLinks[organisation],
+            );
             return (
               <li
                 key={`${title}, ${organisation}`}
@@ -92,13 +71,23 @@ export default async function HomePage() {
               >
                 <span>
                   {title},{" "}
-                  {link ? (
-                    <a href={link} {...linkTarget(link)}>
+                  {name ? (
+                    <a href={name} {...linkTarget(name)}>
                       {organisation}
                     </a>
                   ) : (
                     organisation
                   )}
+                  {host ? (
+                    <>
+                      {" "}
+                      (
+                      <a href={host.url} {...linkTarget(host.url)}>
+                        {host.label}
+                      </a>
+                      )
+                    </>
+                  ) : null}
                 </span>{" "}
                 <span className="shrink-0 font-sans text-base text-muted">
                   {dates}
@@ -109,32 +98,7 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <section aria-labelledby="writing" className="mt-16">
-        <h2 id="writing" className="text-2xl font-semibold tracking-tight">
-          Writing
-        </h2>
-        <div className="mt-6">
-          <PostList posts={latest} descriptions={false} />
-        </div>
-        <p className="mt-6 font-sans text-base">
-          <Link href="/writing">All writing</Link>
-        </p>
-      </section>
-
-      <section aria-labelledby="contact" className="mt-16">
-        <h2 id="contact" className="text-2xl font-semibold tracking-tight">
-          Contact
-        </h2>
-        <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 font-sans text-base">
-          {contactLinks.map(({ label, url }) => (
-            <li key={label}>
-              <a href={url} {...linkTarget(url)}>
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <ProjectTabs />
     </>
   );
 }

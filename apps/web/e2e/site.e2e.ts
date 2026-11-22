@@ -2,7 +2,12 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test";
 import { extractText, getDocumentProxy } from "unpdf";
 import {
   diagramAnchor,
@@ -16,13 +21,21 @@ import {
   cardSize,
   feedPath,
   siteCardPath,
-  siteDescription,
+  homeDescription,
 } from "../src/app/page-metadata";
 import { pageColors, textColors } from "../src/app/theme";
 import { experienceLinks } from "../src/portfolio/experience";
 import { introLine } from "../src/portfolio/intro";
 import { portfolioPdfPath, resumePath } from "../src/portfolio/links";
-import { projectHeading, projects } from "../src/portfolio/projects";
+import {
+  featuredProjects,
+  projectHeading,
+  projectId,
+  projects,
+  type Project,
+} from "../src/portfolio/projects";
+import { jobTabs } from "../src/portfolio/job-tabs";
+import { projectTabs, type ProjectTab } from "../src/portfolio/tabs";
 import { resume } from "../src/resume/claims";
 import { resumePdfPath } from "../src/resume/source";
 import { absoluteUrl, siteUrl } from "../src/site";
@@ -31,7 +44,6 @@ import { loadWritingFrom } from "../src/writing/load";
 import { writingDir } from "../src/writing/source";
 import { calloutLabels } from "../src/writing/markdown";
 import {
-  latestPostCount,
   postCardPath,
   postFilePath,
   postPath,
@@ -41,22 +53,43 @@ import type { Element, Root } from "hast";
 
 const outDir = fileURLToPath(new URL("../out/", import.meta.url));
 
-const portfolioFacts = [
-  resume.name,
-  resume.headline,
-  introLine,
-  resume.email,
-  ...projects.flatMap((project) => [
-    projectHeading(project),
-    project.summary,
-    project.problem,
-    project.part,
-  ]),
-  ...resume.experience.flatMap(({ title, organisation, dates }) => [
-    `${title}, ${organisation}`,
-    dates,
-  ]),
-];
+function portfolioFacts(shown: readonly Project[]) {
+  return [
+    resume.name,
+    resume.headline,
+    introLine,
+    resume.email,
+    ...shown.flatMap((project) => [
+      projectHeading(project),
+      project.summary,
+      project.part,
+      ...project.stack,
+    ]),
+    ...resume.experience.flatMap(({ title, organisation, dates }) => [
+      `${title}, ${organisation}`,
+      dates,
+    ]),
+  ];
+}
+
+const projectTabBar = "Project groups";
+
+async function expectTabShown(page: Page, tab: ProjectTab) {
+  for (const other of projectTabs) {
+    const panel = page.locator(`section.project-panel#${other.id}`);
+    const link = page.locator(`.project-tab-link[href="#${other.id}"]`);
+    if (other === tab) {
+      await expect(panel).toBeVisible();
+      await expect(link).not.toHaveCSS("box-shadow", "none");
+    } else {
+      await expect(panel).toBeHidden();
+      await expect(link).toHaveCSS("box-shadow", "none");
+    }
+  }
+  await expect(
+    page.locator(`#${tab.id}`).getByRole("heading", { level: 3 }),
+  ).toHaveText(tab.projects.map(projectHeading));
+}
 
 const pages = readdirSync(outDir, { recursive: true, encoding: "utf8" })
   .map((file) => file.replaceAll("\\", "/"))
@@ -204,12 +237,10 @@ test.describe("without JavaScript", () => {
       await expect(page.locator("h1")).toHaveCount(1);
       await expect(page.locator("h1")).toBeVisible();
       await expect(page.locator("main")).toBeVisible();
-      const handle = page.getByRole("link", {
-        name: "@irfantayyab",
-        exact: true,
-      });
-      await expect(handle).toHaveAttribute("href", resume.links.github.url);
-      await expect(handle).toHaveAttribute("target", "_blank");
+      await expect(
+        page.locator("header").getByRole("navigation", { name: "Site" }),
+      ).toBeVisible();
+      await expect(page.locator("header a")).toHaveText(["Home", "Writing"]);
       const sameTab = await page
         .locator('a[href^="http"]:not([target="_blank"])')
         .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
@@ -253,35 +284,130 @@ test.describe("without JavaScript", () => {
     await expect(page.locator("main a").first()).toBeFocused();
   });
 
-  test("the home page links the resume", async ({ page }) => {
-    await page.goto("/");
-    await expect(
-      page.getByRole("link", { name: "resume is a PDF" }),
-    ).toHaveAttribute("href", "/resume.pdf");
-  });
-
-  test("the home page shows the projects, then the experience", async ({
+  test("the home page shows the experience, then the projects", async ({
     page,
   }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 2 })).toHaveText([
-      "Projects",
       "Experience",
-      "Writing",
-      "Contact",
+      "Projects",
     ]);
-    const blocks = page.locator("#projects ~ div > article");
-    const count = await blocks.count();
-    expect(count).toBeGreaterThanOrEqual(3);
-    expect(count).toBeLessThanOrEqual(5);
-    await expect(blocks.getByRole("heading", { level: 3 })).toHaveText(
-      projects.map(projectHeading),
+    const blocks = page.locator(".project-panel article");
+    await expect(blocks.locator("h3")).toHaveText(
+      projectTabs.flatMap((tab) => tab.projects).map(projectHeading),
     );
     for (const project of await blocks.all()) {
-      await expect(project.getByRole("heading", { level: 3 })).toHaveCount(1);
-      await expect(project).toContainText("The problem.");
-      await expect(project).toContainText("My part.");
+      await expect(project.locator("h3")).toHaveCount(1);
+      await expect(project.locator("details p")).toHaveCount(1);
     }
+  });
+
+  test("the home page shows its first tab with none chosen, or with another part of the page targeted", async ({
+    page,
+  }) => {
+    const [first] = projectTabs;
+    expect(first?.id).toBe("featured");
+    for (const path of ["/", "/#main", "/#experience"]) {
+      await page.goto(path);
+      await expectTabShown(page, first!);
+    }
+    await expect(page.locator("[data-scroll-edge]")).toHaveCount(0);
+  });
+
+  test("each job in the experience leads to its tab", async ({ page }) => {
+    const jobs = page.locator(`#experience ~ ul > li`);
+    for (const { organisation } of resume.experience) {
+      await page.goto("/");
+      const link = jobs.getByRole("link", { name: organisation, exact: true });
+      const tab = projectTabs.find(({ id }) => id === jobTabs[organisation].id);
+      if (!tab) {
+        const outside = experienceLinks[organisation];
+        await expect(link).toHaveCount(outside ? 1 : 0);
+        if (outside) {
+          await expect(link).toHaveAttribute("href", outside);
+        }
+        continue;
+      }
+      await expect(link).toHaveAttribute("href", `#${tab.id}`);
+      await link.click();
+      await expectTabShown(page, tab!);
+      await expect(page.locator(`#${tab?.id}`)).toBeInViewport();
+    }
+  });
+
+  for (const tab of projectTabs) {
+    test(`/#${tab.id} shows the ${tab.label} tab alone`, async ({ page }) => {
+      await page.goto(`/#${tab.id}`);
+      await expectTabShown(page, tab);
+    });
+
+    test(`the ${tab.label} tab shows each project's stack, and my part on request`, async ({
+      page,
+    }) => {
+      await page.goto(`/#${tab.id}`);
+      for (const project of tab.projects) {
+        const block = page.locator(`#${projectId(project)}`);
+        await expect(
+          block
+            .getByRole("list", { name: `${project.name}: stack` })
+            .getByRole("listitem"),
+        ).toHaveText([...project.stack]);
+        const toggle = block.locator("summary");
+        await expect(toggle).toBeVisible();
+        await expect(toggle).toHaveText(/^My part\b/);
+        await expect(
+          block.locator("summary").filter({ hasText: project.name }),
+        ).toHaveCount(1);
+        const story = block.getByText(project.part);
+        await expect(story).toBeHidden();
+        await toggle.click();
+        await expect(story).toBeVisible();
+        await toggle.click();
+        await expect(story).toBeHidden();
+      }
+    });
+
+    test(`a project's own address opens the ${tab.label} tab`, async ({
+      page,
+    }) => {
+      for (const project of tab.projects) {
+        await page.goto(`/#${projectId(project)}`);
+        await expectTabShown(page, tab);
+        await expect(page.locator(`#${projectId(project)}`)).toBeInViewport();
+      }
+    });
+  }
+
+  test("the tab bar sticks above its panel, and never past the end of Projects", async ({
+    page,
+  }) => {
+    const [first] = projectTabs;
+    await page.setViewportSize({ width: 1280, height: 300 });
+    await page.goto(`/#${first?.id}`);
+    const bar = page.getByRole("navigation", { name: projectTabBar });
+    const panel = page.locator(`#${first?.id}`);
+    await expect
+      .poll(async () => (await bar.boundingBox())?.y)
+      .toBeCloseTo(0, 0);
+    const box = await bar.boundingBox();
+    await expect
+      .poll(async () => (await panel.boundingBox())?.y)
+      .toBeCloseTo((box?.y ?? 0) + (box?.height ?? 0), 0);
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    await expect
+      .poll(async () => {
+        const [barBox, panelBox] = await Promise.all([
+          bar.boundingBox(),
+          panel.boundingBox(),
+        ]);
+        return (
+          (barBox?.y ?? 0) + (barBox?.height ?? 0) <=
+          (panelBox?.y ?? 0) + (panelBox?.height ?? 0)
+        );
+      })
+      .toBe(true);
   });
 
   test("the home page lists every job from the resume's claims", async ({
@@ -292,36 +418,97 @@ test.describe("without JavaScript", () => {
       resume.experience.map(
         ({ title, organisation, dates }) =>
           new RegExp(
-            `^${escape(`${title}, ${organisation}`)}\\s*${escape(dates)}$`,
+            `^${escape(`${title}, ${organisation}`)}(?: \\([^)]+\\))?\\s*${escape(dates)}$`,
           ),
       ),
     );
   });
 
-  test("the home page states every fact the portfolio PDF does, but the stacks", async ({
+  test("the home page states every fact the portfolio PDF does, the email as its link", async ({
     page,
   }) => {
     await page.goto("/");
-    const flat = (await page.locator("main").innerText()).replace(/\s+/g, " ");
-    expect(portfolioFacts.filter((fact) => !flat.includes(fact))).toEqual([]);
+    const flat = (await page.locator("main").textContent())?.replace(
+      /\s+/g,
+      " ",
+    );
+    expect(
+      portfolioFacts(projects)
+        .filter((fact) => fact !== resume.email)
+        .filter((fact) => !flat?.includes(fact)),
+    ).toEqual([]);
+    await expect(
+      page.locator(`main a[href="mailto:${resume.email}"]`),
+    ).toHaveCount(1);
   });
 
-  test("the home page links GitHub, LinkedIn, email and the resume", async ({
+  test("the home page links GitHub, LinkedIn, email and the PDFs, each an icon over its label", async ({
     page,
   }) => {
     await page.goto("/");
-    const contact = page.locator("#contact ~ ul");
+    const contact = page.getByRole("list", { name: "Contact" });
+    await expect(contact).toBeInViewport();
     for (const [name, href] of [
       ["GitHub", resume.links.github.url],
       ["LinkedIn", resume.links.linkedin.url],
-      [resume.email, `mailto:${resume.email}`],
-      ["Resume (PDF)", "/resume.pdf"],
-      ["Portfolio (PDF)", portfolioPdfPath],
+      ["Email", `mailto:${resume.email}`],
+      ["Resume", "/resume.pdf"],
+      ["PDF Portfolio", portfolioPdfPath],
     ]) {
-      await expect(contact.getByRole("link", { name })).toHaveAttribute(
-        "href",
-        href ?? "",
-      );
+      const link = contact.getByRole("link", { name, exact: true });
+      await expect(link).toHaveAttribute("href", href ?? "");
+      await expect(link.locator('svg[aria-hidden="true"]')).toHaveCount(1);
+    }
+  });
+
+  test("the contact links sit beside the name on a wide screen, and under the headline on a phone", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const name = page.getByRole("heading", { level: 1 });
+    const headline = page.getByText(resume.headline, { exact: true });
+    const contact = page.getByRole("list", { name: "Contact" });
+    const [nameBox, wideBox] = await Promise.all([
+      name.boundingBox(),
+      contact.boundingBox(),
+    ]);
+    expect(wideBox!.x).toBeGreaterThan(nameBox!.x + nameBox!.width);
+    expect(
+      Math.abs(
+        wideBox!.y + wideBox!.height / 2 - (nameBox!.y + nameBox!.height / 2),
+      ),
+    ).toBeLessThan(4);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const [headlineBox, phoneBox] = await Promise.all([
+      headline.boundingBox(),
+      contact.boundingBox(),
+    ]);
+    expect(phoneBox!.y).toBeGreaterThan(headlineBox!.y + headlineBox!.height);
+    for (const width of [320, 390, 630]) {
+      await page.setViewportSize({ width, height: 844 });
+      const links = contact.getByRole("link");
+      const [main, first, second, last] = await Promise.all([
+        page.locator("main").boundingBox(),
+        links.nth(0).boundingBox(),
+        links.nth(1).boundingBox(),
+        links.last().boundingBox(),
+      ]);
+      expect(
+        Math.abs(first!.x - main!.x),
+        `${width} px: left edge`,
+      ).toBeLessThan(1);
+      expect(
+        last!.x + last!.width,
+        `${width} px: right edge`,
+      ).toBeLessThanOrEqual(width);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+        `${width} px: no sideways scroll`,
+      ).toBeLessThanOrEqual(width);
+      expect(
+        Math.round(second!.x - (first!.x + first!.width)),
+        `${width} px: gap`,
+      ).toBe(width < 360 ? 16 : 24);
     }
   });
 
@@ -360,20 +547,6 @@ test.describe("without JavaScript", () => {
     }
   });
 
-  test("the home page lists the latest writing", async ({ page }) => {
-    await page.goto("/");
-    const latest = writing.posts.slice(0, latestPostCount);
-    const section = page.locator("section", {
-      has: page.getByRole("heading", { level: 2, name: "Writing" }),
-    });
-    await expect(section.locator("li a")).toHaveText(
-      latest.map(({ title }) => title),
-    );
-    await expect(
-      section.getByRole("link", { name: "All writing" }),
-    ).toHaveAttribute("href", "/writing");
-  });
-
   test("/writing lists every post, newest first", async ({ page }) => {
     await page.goto("/writing");
     const items = page.locator("main li");
@@ -405,6 +578,11 @@ test.describe("without JavaScript", () => {
         "datetime",
         post.date,
       );
+      const byline = page.locator("article h1 + p");
+      await expect(byline).toContainText(`By ${resume.name} · `);
+      await expect(
+        byline.getByRole("link", { name: resume.name, exact: true }),
+      ).toHaveAttribute("href", "/");
       await expect(
         page.getByRole("list", { name: "Tags" }).getByRole("link"),
       ).toHaveText(
@@ -714,6 +892,132 @@ test.describe("without JavaScript", () => {
 });
 
 test.describe("with JavaScript", () => {
+  test("the project tabs mark the active one and replace the history entry", async ({
+    page,
+  }) => {
+    const [first, second] = projectTabs;
+    await page.goto("/");
+    const bar = page.getByRole("navigation", { name: projectTabBar });
+    const firstLink = bar.getByRole("link", { name: first?.label });
+    const secondLink = bar.getByRole("link", { name: second?.label });
+    await expect(firstLink).toHaveAttribute("aria-current", "true");
+    await expect(secondLink).not.toHaveAttribute("aria-current");
+    const entries = await page.evaluate(() => history.length);
+    await secondLink.click();
+    await expect(page).toHaveURL(new RegExp(`#${second?.id}$`));
+    await expect(secondLink).toHaveAttribute("aria-current", "true");
+    await expect(firstLink).not.toHaveAttribute("aria-current");
+    await expectTabShown(page, second!);
+    expect(await page.evaluate(() => history.length)).toBe(entries);
+  });
+
+  test("changing a tab leaves the page still until the bar sticks, then scrolls to where it sticks", async ({
+    page,
+  }) => {
+    const [first, second, third] = projectTabs;
+    await page.goto("/");
+    const bar = page.getByRole("navigation", { name: projectTabBar });
+    await bar.scrollIntoViewIfNeeded();
+    const stickingPoint = await bar.evaluate(
+      (element) => element.getBoundingClientRect().top + window.scrollY,
+    );
+    const still = await page.evaluate(() => window.scrollY);
+    expect(still).toBeLessThan(stickingPoint);
+    await bar.getByRole("link", { name: second?.label }).click();
+    await expectTabShown(page, second!);
+    expect(await page.evaluate(() => window.scrollY)).toBe(still);
+
+    await bar.getByRole("link", { name: first?.label }).click();
+    await page.evaluate((top) => window.scrollTo(0, top), stickingPoint + 400);
+    await bar.getByRole("link", { name: third?.label }).click();
+    await expectTabShown(page, third!);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeCloseTo(stickingPoint, 0);
+    expect((await bar.boundingBox())?.y).toBeCloseTo(0, 0);
+  });
+
+  test("changing to any tab while scrolled past the bar puts the bar at the top, or as near as the page allows", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const bar = page.getByRole("navigation", { name: projectTabBar });
+    await bar.scrollIntoViewIfNeeded();
+    const stickingPoint = await bar.evaluate(
+      (element) => element.getBoundingClientRect().top + window.scrollY,
+    );
+    const [featured, ...others] = projectTabs;
+    for (const tab of others) {
+      await bar.getByRole("link", { name: featured!.label }).click();
+      await expectTabShown(page, featured!);
+      await page.evaluate(
+        (top) => window.scrollTo(0, top),
+        stickingPoint + 200,
+      );
+      expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(
+        stickingPoint,
+      );
+      await bar.getByRole("link", { name: tab.label }).click();
+      await expectTabShown(page, tab);
+      await expect
+        .poll(async () => {
+          const top = Math.round((await bar.boundingBox())?.y ?? -1);
+          const atEnd = await page.evaluate(
+            () =>
+              Math.ceil(window.scrollY + window.innerHeight) >=
+              document.documentElement.scrollHeight - 1,
+          );
+          return top === 0 || (top > 0 && atEnd);
+        })
+        .toBe(true);
+    }
+  });
+
+  test("the tab bar scrolls sideways on a phone, its chevrons showing only where it can scroll", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const bar = page.getByRole("navigation", { name: projectTabBar });
+    const row = bar.locator("[data-scroll-row]");
+    const start = bar.locator('[data-scroll-edge="start"]');
+    const end = bar.locator('[data-scroll-edge="end"]');
+    expect(
+      await row.evaluate(
+        (element) => element.scrollWidth > element.clientWidth,
+      ),
+    ).toBe(true);
+    await expect(end).toBeVisible();
+    await expect(start).toHaveCount(0);
+    await bar.scrollIntoViewIfNeeded();
+    await end.click();
+    await expect
+      .poll(() => row.evaluate((element) => element.scrollLeft))
+      .toBeGreaterThan(0);
+    await expect(start).toBeVisible();
+
+    const last = projectTabs.at(-1);
+    await page.goto(`/#${last?.id}`);
+    await page.reload();
+    const link = bar.getByRole("link", { name: last?.label });
+    await expect(link).toHaveAttribute("aria-current", "true");
+    await expect
+      .poll(async () => {
+        const [rowBox, linkBox] = await Promise.all([
+          row.boundingBox(),
+          link.boundingBox(),
+        ]);
+        return (
+          !!rowBox &&
+          !!linkBox &&
+          linkBox.x >= rowBox.x &&
+          linkBox.x + linkBox.width <= rowBox.x + rowBox.width
+        );
+      })
+      .toBe(true);
+    await expect(end).toHaveCount(0);
+  });
+
   for (const { post, code } of rich.filter((item) => item.code.length > 0)) {
     test(`${postPath(post.slug)} keeps the wrap and copy buttons clear of the code`, async ({
       page,
@@ -1046,11 +1350,11 @@ test.describe("the portfolio PDF", () => {
     );
   });
 
-  test("has a cover, a page per project, the experience and the contact, each A4 landscape", async ({
+  test("has a cover, a page per featured project, the experience and the contact, each A4 landscape", async ({
     request,
   }) => {
     const { pdf } = await loadPdf(request);
-    expect(pdf.numPages).toBe(projects.length + 3);
+    expect(pdf.numPages).toBe(featuredProjects.length + 3);
     for (let number = 1; number <= pdf.numPages; number++) {
       const { width, height } = (await pdf.getPage(number)).getViewport({
         scale: 1,
@@ -1064,10 +1368,7 @@ test.describe("the portfolio PDF", () => {
     const { pdf } = await loadPdf(request);
     const { text } = await extractText(pdf, { mergePages: true });
     const flat = text.replace(/\s+/g, " ");
-    const facts = [
-      ...portfolioFacts,
-      ...projects.flatMap(({ stack }) => stack),
-    ];
+    const facts = portfolioFacts(featuredProjects);
     expect(facts.filter((fact) => !flat.includes(fact))).toEqual([]);
   });
 
@@ -1094,7 +1395,7 @@ test.describe("the portfolio PDF", () => {
         absoluteUrl(resumePath),
         resume.links.github.url,
         resume.links.linkedin.url,
-        ...projects.flatMap(({ links }) => links.map(({ url }) => url)),
+        ...featuredProjects.flatMap(({ links }) => links.map(({ url }) => url)),
         ...Object.values(experienceLinks),
       ].map((url) => new URL(url).href),
     );
@@ -1156,7 +1457,7 @@ test.describe("sharing", () => {
       );
       await expect(meta("og:description")).toHaveAttribute(
         "content",
-        path === "/" ? siteDescription : /\S/,
+        path === "/" ? homeDescription : /\S/,
       );
       await expect(meta("og:type")).toHaveAttribute(
         "content",
@@ -1338,7 +1639,11 @@ test.describe("sharing", () => {
 });
 
 test.describe("accessibility", () => {
-  for (const path of [...pages, "/no-such-page"]) {
+  for (const path of [
+    ...pages,
+    ...projectTabs.slice(1).map(({ id }) => `/#${id}`),
+    "/no-such-page",
+  ]) {
     for (const { colorScheme } of themes) {
       test(`${path} passes axe in the ${colorScheme} theme`, async ({
         page,

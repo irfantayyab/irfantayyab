@@ -6,7 +6,7 @@ import { introLine } from "@/portfolio/intro";
 import { resumePath } from "@/portfolio/links";
 import { ProjectName } from "@/portfolio/project-name";
 import { projectScreenshots } from "@/portfolio/project-screenshots";
-import { projects, type Project } from "@/portfolio/projects";
+import { featuredProjects, type Project } from "@/portfolio/projects";
 import { resume } from "@/resume/claims";
 import { absoluteUrl } from "@/site";
 import "./portfolio.css";
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-const pageCount = projects.length + 3;
+const pageCount = featuredProjects.length + 3;
 
 function shown(url: string) {
   return url
@@ -58,7 +58,7 @@ function Page({ number, children }: { number: number; children: ReactNode }) {
 }
 
 function Cover() {
-  const shots = projects.flatMap(({ name }) => {
+  const shots = featuredProjects.flatMap(({ name }) => {
     const screenshot = projectScreenshots[name];
     return screenshot ? [screenshot] : [];
   });
@@ -132,11 +132,7 @@ function ProjectLinks({ project }: { project: Project }) {
 
 function Story({ project }: { project: Project }) {
   return (
-    <div className="pdf-body space-y-4">
-      <p>
-        <strong className="font-semibold">The problem.</strong>{" "}
-        {project.problem}
-      </p>
+    <div className="pdf-body">
       <p>
         <strong className="font-semibold">My part.</strong> {project.part}
       </p>
@@ -148,7 +144,7 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
   const heading = (
     <>
       <Label>
-        Project {index + 1} of {projects.length}
+        Project {index + 1} of {featuredProjects.length}
       </Label>
       <h2 className="pdf-title mt-3">
         <ProjectName project={project} />
@@ -158,7 +154,7 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
   );
   const screenshot = projectScreenshots[project.name];
   return (
-    <Page number={index + 2}>
+    <Page number={index + 3}>
       {screenshot ? (
         <div className="grid h-full grid-cols-[1fr_440px] gap-12 px-20 pt-16 pb-24">
           <div className="flex flex-col">
@@ -196,7 +192,7 @@ function ProjectPage({ project, index }: { project: Project; index: number }) {
 
 function ExperiencePage() {
   return (
-    <Page number={projects.length + 2}>
+    <Page number={2}>
       <div className="px-20 pt-16">
         <Label>Background</Label>
         <h2 className="pdf-title mt-3">Experience</h2>
@@ -250,10 +246,10 @@ export default function PortfolioPrint() {
   return (
     <main>
       <Cover />
-      {projects.map((project, index) => (
+      <ExperiencePage />
+      {featuredProjects.map((project, index) => (
         <ProjectPage key={project.name} project={project} index={index} />
       ))}
-      <ExperiencePage />
       <ContactPage />
     </main>
   );

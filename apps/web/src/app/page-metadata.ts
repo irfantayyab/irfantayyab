@@ -11,6 +11,8 @@ export const writingDescription = "Everything I have written, newest first.";
 
 export const siteDescription = `Projects, experience and writing by ${resume.name}, ${resume.headline}.`;
 
+export const homeDescription = `Experience and projects of ${resume.name}, ${resume.headline}.`;
+
 export const feedLinks = {
   "application/rss+xml": [{ url: feedPath, title: feedTitle }],
 };
