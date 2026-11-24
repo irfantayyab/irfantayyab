@@ -23,7 +23,7 @@ export const resume = {
     {
       title: "BS in Computer Science",
       organisation: "Virtual University of Pakistan",
-      dates: "",
+      dates: "Feb 2027",
     },
   ],
   experience: [
@@ -38,7 +38,7 @@ export const resume = {
       dates: "Mar 2025 – Nov 2025",
     },
     {
-      title: "MERN Stack Developer",
+      title: "MERN Stack Developer (Contract)",
       organisation: "CodeFlamme Pvt Ltd",
       dates: "Jul 2024 – Feb 2025",
     },
@@ -47,12 +47,12 @@ export const resume = {
     {
       title: "Open Source Contributor",
       organisation: "Plumb MCP",
-      dates: "Aug 2026",
+      dates: "",
     },
   ],
   jobLinks: {},
   openSourceLinks: {
-    "Plumb MCP": "https://github.com/irfantayyab/plumb-mcp/commit/2ef8952",
+    "Plumb MCP": "https://github.com/tathagatmaitray/plumb-mcp/commit/2ef8952",
   },
 } as const satisfies {
   name: string;
