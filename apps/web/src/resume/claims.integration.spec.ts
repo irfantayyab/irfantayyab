@@ -19,7 +19,7 @@ const claims = [
   resume.headline,
   resume.email,
   ...Object.values(resume.links).map(({ label }) => label),
-  ...[...resume.education, ...resume.experience].map(entryLine),
+  ...[...resume.experience, ...resume.education].map(entryLine),
 ];
 
 function entryLine({ title, organisation, dates }: ResumeEntry) {
@@ -78,12 +78,12 @@ describe("the resume's claims", () => {
       emails: [resume.email],
       links: Object.values(resume.links),
       sections: [
-        { title: "Education", entries: resume.education },
         { title: "Work Experience", entries: expect.any(Array) },
+        { title: "Education", entries: resume.education },
       ],
       contributions: resume.openSource,
     });
-    const work = tex.sections[1]?.entries ?? [];
+    const work = tex.sections[0]?.entries ?? [];
     expect(work.filter((entry) => !isContribution(entry))).toEqual(
       resume.experience,
     );
