@@ -442,23 +442,25 @@ test.describe("without JavaScript", () => {
     ).toHaveCount(1);
   });
 
-  test("the home page links GitHub, LinkedIn, email and the PDFs, each an icon over its label", async ({
+  test("the home page links GitHub, LinkedIn, email and the resume, each an icon over its label", async ({
     page,
   }) => {
     await page.goto("/");
     const contact = page.getByRole("list", { name: "Contact" });
     await expect(contact).toBeInViewport();
-    for (const [name, href] of [
+    const links = [
       ["GitHub", resume.links.github.url],
       ["LinkedIn", resume.links.linkedin.url],
       ["Email", `mailto:${resume.email}`],
       ["Resume", "/resume.pdf"],
-      ["PDF Portfolio", portfolioPdfPath],
-    ]) {
+    ];
+    await expect(contact.getByRole("link")).toHaveCount(links.length);
+    for (const [name, href] of links) {
       const link = contact.getByRole("link", { name, exact: true });
       await expect(link).toHaveAttribute("href", href ?? "");
       await expect(link.locator('svg[aria-hidden="true"]')).toHaveCount(1);
     }
+    await expect(page.locator(`a[href="${portfolioPdfPath}"]`)).toHaveCount(0);
   });
 
   test("the contact links sit beside the name on a wide screen, and under the headline on a phone", async ({
