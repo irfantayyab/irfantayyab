@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { linkTarget } from "@/app/link-target";
 import { resume } from "@/resume/claims";
-import { portfolioPdfPath, resumePath } from "./links";
+import { resumePath } from "./links";
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -63,16 +63,6 @@ export const contactLinks = [
         <path d="M10 9H8" />
         <path d="M16 13H8" />
         <path d="M16 17H8" />
-      </Icon>
-    ),
-  },
-  {
-    label: "PDF Portfolio",
-    url: portfolioPdfPath,
-    icon: (
-      <Icon>
-        <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-        <rect width="20" height="14" x="2" y="6" rx="2" />
       </Icon>
     ),
   },
